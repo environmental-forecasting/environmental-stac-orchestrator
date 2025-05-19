@@ -2,9 +2,9 @@
 
 This meta-repository coordinates a modular, containerised icenet dashboard application composed of:
 
-- **icenet-dashboard-preprocessor** – An installable Python package that converts netCDF files to Cloud-Optimised GeoTIFFs (COGs) for use by the tiler.
-- **icenet-dashboard** – A Plotly Dash web app for visualising IceNet forecasts.
-- **icenet-tiler-api** – A TiTiler + FastAPI-based backend that serves map tiles and static data.
+- **[icenet-dashboard-preprocessor](https://github.com/icenet-ai/icenet-dashboard-preprocessor)** – An installable Python package that converts netCDF files to Cloud-Optimised GeoTIFFs (COGs) for use by the tiler.
+- **[icenet-tiler-api](https://github.com/icenet-ai/icenet-tiler-api)** – A TiTiler + FastAPI-based backend that serves map tiles and static data.
+- **[icenet-dashboard](https://github.com/icenet-ai/icenet-dashboard)** – A Plotly Dash web app for visualising IceNet forecasts.
 
 ---
 
