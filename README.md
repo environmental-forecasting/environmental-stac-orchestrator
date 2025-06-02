@@ -65,7 +65,11 @@ data/
     └──  catalog.json
 ```
 
-### 3. Set up configuration ENV file
+### 3. Set up configuration ENV file (WIP)
+
+Each service can be configured via environment variables. They
+are orchestrated via `compose.yaml` for consistency across
+environments.
 
 Run the following script which will output a minimal `.env` file which
 includes the ports the components should be deployed one, and the IP
@@ -74,6 +78,9 @@ address that the COGs should be accessible from.
 ```bash
 ./generate_env.sh
 ```
+
+There are quite a few duplications (e.g. hostname, ports) to be taken care of since originally each
+component of the stack was run independently.
 
 ### 4. Build & Launch the Full Stack
 
@@ -91,21 +98,4 @@ This will:
 * Dashboard UI: http://localhost:8001
 * Tiler API: http://localhost:8000
 * Data Server: http://localhost:8002
-
-## Environment Configuration (Extreme WIP!)
-
-Each service can be configured via environment variables.
-
-The following environmental variables are set in compose.yaml for consistency across environments.
-
-```bash
-TITILER_URL=http://172.17.0.1:8000
-DATA_URL=http://172.17.0.1:8002
-CATALOG_PATH=http://172.17.0.1:8002/data/stac/catalog.json
-```
-
-Note to self: `172.17.0.1` is the default Docker internal network.
-
-There are quite a few duplications (e.g. hostname, ports) to be taken care of since originally each
-component of the stack was run independently.
 
