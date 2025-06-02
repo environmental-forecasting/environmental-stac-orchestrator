@@ -61,7 +61,17 @@ data/
     └──  catalog.json
 ```
 
-### 3. Build & Launch the Full Stack
+### 3. Set up configuration ENV file
+
+Run the following script which will output a minimal `.env` file which
+includes the ports the components should be deployed one, and the IP
+address that the COGs should be accessible from.
+
+```bash
+./generate_env.sh
+```
+
+### 4. Build & Launch the Full Stack
 
 ```bash
 make up
@@ -72,7 +82,7 @@ This will:
 * Build all service images (icenet-dashboard, icenet-tiler-api)
 * Launch the dashboard and tile server stack via docker-compose
 
-### 4. Access the UI Interfaces and Docs
+### 5. Access the UI Interfaces and Docs
 
 * Dashboard UI: http://localhost:8001
 * Tiler API: http://localhost:8000

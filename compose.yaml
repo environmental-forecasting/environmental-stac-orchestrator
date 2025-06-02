@@ -3,25 +3,25 @@ services:
     build:
       context: ./icenet-dashboard
     ports:
-      - "8001:8001"
+      - "${DASHBOARD_PORT}:${DASHBOARD_PORT}"
     depends_on:
       - tiler-api
     environment:
       - PYTHONPATH=/app/src
-      - TITILER_URL=http://172.17.0.1:8000
-      - DATA_URL=http://172.17.0.1:8002
+      - TITILER_URL=http://${HOST_IP}:${TILER_PORT}
+      - DATA_URL=http://${HOST_IP}:${DATA_PORT}
+      - DASHBOARD_PORT=${DASHBOARD_PORT}
 
   tiler-api:
     build:
       context: ./icenet-tiler-api
     ports:
-      - "8000:8000"
-      - "8002:8002"
+      - "${TILER_PORT}:${TILER_PORT}"
+      - "${DATA_PORT}:${DATA_PORT}"
     environment:
-      - TILER_PORT=8000
-      - DATA_PORT=8002
-      - WORKERS=12
+      - TILER_PORT=${TILER_PORT}
+      - DATA_PORT=${DATA_PORT}
+      - WORKERS=${WORKERS}
       - DATA_DIR=/app/mounted_vols/data
     volumes:
       - ./data:/app/mounted_vols/data
-
