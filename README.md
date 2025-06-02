@@ -20,6 +20,10 @@ meta-repo/
 └── Makefile # Top-level automation commands
 ```
 
+This is the basic workflow:
+
+![Architecture diagram](docs/images/dashboard-dash-leaflet-schematic-light.jpg "Architecture Diagram")
+
 ---
 
 ## Getting Started
