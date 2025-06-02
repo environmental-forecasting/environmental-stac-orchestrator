@@ -95,7 +95,7 @@ This will:
 
 ### 5. Access the UI Interfaces and Docs
 
-* Dashboard UI: http://localhost:8001
+* Dashboard UI: http://localhost
 * Tiler API: http://localhost:8000
 * Data Server: http://localhost:8002
 
