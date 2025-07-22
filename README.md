@@ -99,3 +99,21 @@ This will:
 * Tiler API: http://localhost:8000
 * Data Server: http://localhost:8002
 
+
+### FAQ
+
+1. I see the following error with the database service:
+
+```bash
+pgstac-1    | Running PgSTAC migration...
+database-1  | 2025-07-17 09:19:09.995 UTC [85] ERROR:  relation "pgstac.migrations" does not exist at character 38
+database-1  | 2025-07-17 09:19:09.995 UTC [85] STATEMENT:  
+database-1  |                   SELECT version from pgstac.migrations
+database-1  |                   order by datetime desc, version desc limit 1;
+database-1  |                   
+pgstac-1    | 0.9.6
+pgstac-1    | PgSTAC migration completed
+pgstac-1 exited with code 0
+```
+
+This is expected, and part of `pypgstac migrate`'s approach when initialising an empty database.

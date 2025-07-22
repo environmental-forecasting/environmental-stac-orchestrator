@@ -1,27 +1,103 @@
 services:
-  dashboard:
-    build:
-      context: ./icenet-dashboard
-    ports:
-      - "${DASHBOARD_PORT}:${DASHBOARD_PORT}"
-    depends_on:
-      - tiler-api
+  # PostgreSQL database with PostGIS
+  database:
+    image: postgis/postgis:latest
     environment:
-      - PYTHONPATH=/app/src
-      - TITILER_URL=http://${HOST_IP}:${TILER_PORT}
-      - DATA_URL=http://${HOST_IP}:${DATA_PORT}
-      - DASHBOARD_PORT=${DASHBOARD_PORT}
-
-  tiler-api:
-    build:
-      context: ./icenet-tiler-api
+      - POSTGRES_USER=stac
+      - POSTGRES_PASSWORD=stac
+      - POSTGRES_DB=postgis
+      # - PGUSER=stac
+      # - PGPASSWORD=stac
+      # - PGDATABASE=postgis
+      # - DIV=DIVIDER
+      # # Following are used by applications to connect to the db:
+      # - POSTGRES_HOST_READER=database
+      # - POSTGRES_HOST_WRITER=database
     ports:
-      - "${TILER_PORT}:${TILER_PORT}"
-      - "${DATA_PORT}:${DATA_PORT}"
-    environment:
-      - TILER_PORT=${TILER_PORT}
-      - DATA_PORT=${DATA_PORT}
-      - WORKERS=${WORKERS}
-      - DATA_DIR=/app/mounted_vols/data
+      - "5432:5432"
+    command: postgres -N 1000
     volumes:
-      - ./data:/app/mounted_vols/data
+      - postgres_data:/var/lib/postgresql/data # Check with `docker volume ls`, `docker volume inspect ...`
+    networks:
+      - stac-network
+
+  # PgSTAC migration and setup of PostGIS db
+  pgstac:
+    image: ghcr.io/stac-utils/pgstac:latest
+    # Refer to: https://stac-utils.github.io/pgstac/pypgstac/
+    environment:
+      - PGHOST=database
+      - PGPORT=5432
+      - PGDATABASE=postgis
+      - PGUSER=stac
+      - PGPASSWORD=stac
+    depends_on:
+      - database
+    command: >
+      bash -c "
+        echo Waiting for database to be ready.
+        pypgstac pgready
+        apt-get update && apt-get -y install python3 python3-pip
+        pip3 install psycopg[pool,binary] pypgstac
+        echo Running PgSTAC migration...
+        pypgstac migrate && echo PgSTAC migration completed
+      "
+    # command: >
+    #   bash -c "
+    #     for i in {1..30}; do
+    #       pg_isready -h database -p 5432 && break
+    #       echo 'Waiting for database...'
+    #       sleep 1
+    #     done
+    #     apt-get update && apt-get -y install python3 python3-pip
+    #     pip3 install psycopg[pool,binary] pypgstac
+    #     echo Running PgSTAC migration...
+    #     pypgstac migrate && echo PgSTAC migration completed
+    #     # /opt/docker/pypgstac/bin/pypgstac migrate && echo PgSTAC migration completed
+    #   "
+
+    networks:
+      - stac-network
+
+
+# Should name this based on dev/stag/prod for dev, staging, production
+volumes:
+  postgres_data:
+
+networks:
+  stac-network:
+    driver: bridge
+
+
+
+#   dashboard:
+#     build:
+#       context: ./icenet-dashboard
+#     ports:
+#       - "${DASHBOARD_PORT}:${DASHBOARD_PORT}"
+#     depends_on:
+#       - tiler-api
+#     environment:
+#       - PYTHONPATH=/app/src
+#       - TITILER_URL=http://${HOST_IP}:${TILER_PORT}
+#       - DATA_URL=http://${HOST_IP}:${DATA_PORT}
+#       - DASHBOARD_PORT=${DASHBOARD_PORT}
+
+#   tiler-api:
+#     build:
+#       context: ./icenet-tiler-api
+#     ports:
+#       - "${TILER_PORT}:${TILER_PORT}"
+#       - "${DATA_PORT}:${DATA_PORT}"
+#     environment:
+#       - TILER_PORT=${TILER_PORT}
+#       - DATA_PORT=${DATA_PORT}
+#       - WORKERS=${WORKERS}
+#       - DATA_DIR=/app/mounted_vols/data
+#     volumes:
+#       - ./data:/app/mounted_vols/data
+
+
+# # Reference Docker compose file found:
+# # https://gitlab.eox.at/vs/stacture/-/blob/71b988de6c145567c0b1f4c5d4a4fb1cf1724200/docker-compose.yaml
+# # https://github.com/microsoft/planetary-computer-apis/blob/main/pc-stac.dev.env
