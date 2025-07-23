@@ -1,19 +1,42 @@
 #!/bin/bash
 
-# Get host IP (LAN or external IP detection)
+## User-modifiable variables
+## _________________________
+
 WORKERS=12
+
+# Ports
+DATABASE_PORT=5432
+STAC_FASTAPI_PORT=8001
+FILE_SERVER_PORT=8002
+STAC_BROWSER_PORT=81
 TILER_PORT=8000
 DASHBOARD_PORT=80
-DATA_PORT=8002
+
+# Database details
+DATABASE_USER=stac
+DATABASE_PASSWORD=stac
+DATABASE_DBNAME=postgis
+
+## Not to be changed (unless adding more env vars above)
+## _____________________________________________________
 
 # Save config options
 cat <<EOF > .env
 WORKERS=${WORKERS}
+DATABASE_PORT=${DATABASE_PORT}
+STAC_FASTAPI_PORT=${STAC_FASTAPI_PORT}
+FILE_SERVER_PORT=${FILE_SERVER_PORT}
+STAC_BROWSER_PORT=${STAC_BROWSER_PORT}
 TILER_PORT=${TILER_PORT}
 DASHBOARD_PORT=${DASHBOARD_PORT}
-DATA_PORT=${DATA_PORT}
+DATABASE_USER=${DATABASE_USER}
+DATABASE_PASSWORD=${DATABASE_PASSWORD}
+DATABASE_DBNAME=${DATABASE_DBNAME}
 HOST_IP=<ENTER_HOST_IP>
+FILE_SERVER_URL=http://<ENTER_HOST_IP>:${FILE_SERVER_PORT}
+STAC_FASTAPI_URL=http://<ENTER_HOST_IP>:${STAC_FASTAPI_PORT}
 EOF
 
+# Set host IP (LAN or external IP detection)
 sed -i.bak "s|<ENTER_HOST_IP>|$(hostname -I | awk '{print $1}')|g" .env
-
