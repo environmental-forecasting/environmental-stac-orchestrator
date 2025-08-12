@@ -1,9 +1,6 @@
 [submodule "icenet-dashboard-preprocessor"]
 	path = environmental-stac-generator
 	url = git@github.com:environmental-forecasting/environmental-stac-generator.git
-[submodule "icenet-tiler-api"]
-	path = environmental-tiler-api
-	url = git@github.com:environmental-forecasting/environmental-tiler-api.git
 [submodule "icenet-dashboard"]
 	path = environmental-stac-dashboard
 	url = git@github.com:environmental-forecasting/environmental-stac-dashboard.git
