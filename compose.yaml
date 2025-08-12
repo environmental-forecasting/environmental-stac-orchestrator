@@ -107,6 +107,7 @@ services:
 # Should name this based on dev/stag/prod for dev, staging, production
 volumes:
   postgres_data:
+    name: environmental_pgstac_volume
 
 networks:
   stac-network:
