@@ -96,7 +96,7 @@ services:
     environment:
       # Ref: https://github.com/radiantearth/stac-browser/blob/main/docs/options.md#catalogurl
       # To load from stac-fastapi + pgSTAC db
-      SB_catalogUrl: http://localhost:${STAC_FASTAPI_PORT}
+      SB_catalogUrl: http://${HOST_IP}:${STAC_FASTAPI_PORT}
       # To load directly from JSON catalog (lose dynamic features like search)
       # SB_catalogUrl: http://localhost:${FILE_SERVER_PORT}/data/stac/catalog.json
       SB_cardViewMode: card
