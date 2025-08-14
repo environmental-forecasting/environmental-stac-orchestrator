@@ -98,11 +98,45 @@ services:
       # To load from stac-fastapi + pgSTAC db
       SB_catalogUrl: http://${HOST_IP}:${STAC_FASTAPI_PORT}
       # To load directly from JSON catalog (lose dynamic features like search)
-      # SB_catalogUrl: http://localhost:${FILE_SERVER_PORT}/data/stac/catalog.json
+      # SB_catalogUrl: http://${HOST_IP}:${FILE_SERVER_PORT}/data/stac/catalog.json
       SB_cardViewMode: card
       SB_crossOriginMedia: anonymous
     networks:
       - stac-network
+
+  # TiTiler for dynamic tiling
+  titiler:
+    image: ghcr.io/developmentseed/titiler:latest
+    ports:
+      - ${TILER_PORT}:80
+    environment:
+      # Ref: https://gdal.org/en/stable/user/configoptions.html
+      - CPL_TMPDIR=/tmp
+      - GDAL_CACHEMAX=75%
+      - GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR
+      - GDAL_HTTP_MERGE_CONSECUTIVE_RANGES=YES
+      - GDAL_HTTP_MULTIPLEX=YES
+      - GDAL_HTTP_VERSION=2
+      - PYTHONWARNINGS=ignore
+      - VSI_CACHE=TRUE
+      - VSI_CACHE_SIZE=5000000
+    volumes:
+      - ./data:/data
+    networks:
+      - stac-network
+
+  dashboard:
+    build:
+      context: ./environmental-stac-dashboard
+    ports:
+      - "${DASHBOARD_PORT}:${DASHBOARD_PORT}"
+    depends_on:
+      - stac-fastapi
+    environment:
+      - PYTHONPATH=/app/src
+      - TITILER_URL=http://${HOST_IP}:${TILER_PORT}
+      - FILE_SERVER_URL=http://${HOST_IP}:${FILE_SERVER_PORT}
+      - DASHBOARD_PORT=${DASHBOARD_PORT}
 
 # Should name this based on dev/stag/prod for dev, staging, production
 volumes:
@@ -113,34 +147,6 @@ networks:
   stac-network:
     driver: bridge
 
-#   dashboard:
-#     build:
-#       context: ./icenet-dashboard
-#     ports:
-#       - "${DASHBOARD_PORT}:${DASHBOARD_PORT}"
-#     depends_on:
-#       - tiler-api
-#     environment:
-#       - PYTHONPATH=/app/src
-#       - TITILER_URL=http://${HOST_IP}:${TILER_PORT}
-#       - DATA_URL=http://${HOST_IP}:${DATA_PORT}
-#       - DASHBOARD_PORT=${DASHBOARD_PORT}
-
-#   tiler-api:
-#     build:
-#       context: ./icenet-tiler-api
-#     ports:
-#       - "${TILER_PORT}:${TILER_PORT}"
-#       - "${DATA_PORT}:${DATA_PORT}"
-#     environment:
-#       - TILER_PORT=${TILER_PORT}
-#       - DATA_PORT=${DATA_PORT}
-#       - WORKERS=${WORKERS}
-#       - DATA_DIR=/app/mounted_vols/data
-#     volumes:
-#       - ./data:/app/mounted_vols/data
-
-
-# # Reference Docker compose file found:
-# # https://gitlab.eox.at/vs/stacture/-/blob/71b988de6c145567c0b1f4c5d4a4fb1cf1724200/docker-compose.yaml
-# # https://github.com/microsoft/planetary-computer-apis/blob/main/pc-stac.dev.env
+# Reference Docker compose file found:
+# https://gitlab.eox.at/vs/stacture/-/blob/71b988de6c145567c0b1f4c5d4a4fb1cf1724200/docker-compose.yaml
+# https://github.com/microsoft/planetary-computer-apis/blob/main/pc-stac.dev.env
