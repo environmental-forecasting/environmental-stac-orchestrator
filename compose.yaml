@@ -73,7 +73,7 @@ services:
         uvicorn stac_fastapi.pgstac.app:app --host 0.0.0.0 --port ${STAC_FASTAPI_PORT}
       "
     volumes:
-      - ./data:/data
+      - ./data:/data:ro
     networks:
       - stac-network
 
@@ -121,7 +121,7 @@ services:
       - VSI_CACHE=TRUE
       - VSI_CACHE_SIZE=5000000
     volumes:
-      - ./data:/data
+      - ./data:/data:ro
     networks:
       - stac-network
 
