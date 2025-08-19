@@ -134,9 +134,11 @@ services:
       - stac-fastapi
     environment:
       - PYTHONPATH=/app/src
-      - TITILER_URL=http://${HOST_IP}:${TILER_PORT}
-      - FILE_SERVER_URL=http://${HOST_IP}:${FILE_SERVER_PORT}
-      - DASHBOARD_PORT=${DASHBOARD_PORT}
+      - TILER_URL=${TILER_URL}  # used by dashboard config
+      - STAC_FASTAPI_URL=${STAC_FASTAPI_URL}  # used by dashboard config
+      - DASHBOARD_PORT=${DASHBOARD_PORT} # used by `environmental-stac-dashboard/Dockerfile`
+    networks:
+      - stac-network
 
 # Should name this based on dev/stag/prod for dev, staging, production
 volumes:
