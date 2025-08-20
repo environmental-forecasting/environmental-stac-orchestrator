@@ -1,0 +1,38 @@
+- hosts: all
+  become: true
+  vars:
+    dest_dir: "/tmp/checkout"
+  tasks:
+    - name: Remove Open VM Tools (Open source VMWare Tools)
+      ansible.builtin.dnf:
+        name: open-vm-tools
+        autoremove: yes
+        state: absent # implicit with above
+
+    - name: Remove Docker repository
+      ansible.builtin.command: rm -f /etc/yum.repos.d/docker-ce.repo
+
+    - name: Remove Docker
+      ansible.builtin.dnf:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        autoremove: yes
+        state: absent
+
+    - name: Remove other dependencies (Git, Apache, make)
+      ansible.builtin.dnf:
+        name:
+          - git
+          - httpd
+          - make
+        autoremove: yes
+        state: absent
+
+    - name: Remove git cloned repo
+      ansible.builtin.file:
+        path: "{{ dest_dir }}"
+

@@ -163,3 +163,9 @@ cython_debug/
 #.idea/
 
 # This project specific
+
+# Ignore everything in data/ where all outputs go
+data/*
+# But want to keep empty dir in this repo
+!data/.gitkeep
+

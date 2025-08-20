@@ -1,27 +1,158 @@
 services:
+  # PostgreSQL database with PostGIS
+  database:
+    image: postgis/postgis:latest
+    environment:
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=${DATABASE_DBNAME}
+    ports:
+      - ${DATABASE_PORT}:5432
+    command: postgres -N 1000
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Check with `docker volume ls`, `docker volume inspect ...`
+    networks:
+      - stac-network
+
+  # PgSTAC migration and setup of PostGIS db
+  pgstac:
+    image: ghcr.io/stac-utils/pgstac:latest
+    # Refer to: https://stac-utils.github.io/pgstac/pypgstac/
+    environment:
+      - PGHOST=database
+      - PGPORT=${DATABASE_PORT}
+      - PGDATABASE=${DATABASE_DBNAME}
+      - PGUSER=${DATABASE_USER}
+      - PGPASSWORD=${DATABASE_PASSWORD}
+    depends_on:
+      - database
+    command: >
+      bash -c "
+        echo Waiting for database to be ready.
+        pypgstac pgready
+        apt-get update && apt-get -y install python3 python3-pip
+        pip3 install psycopg[pool,binary] pypgstac
+        echo Running PgSTAC migration...
+        pypgstac migrate && echo PgSTAC migration completed
+      "
+
+    networks:
+      - stac-network
+
+  # STAC FastAPI with PgSTAC backend
+  stac-fastapi:
+    image: ghcr.io/stac-utils/stac-fastapi-pgstac:latest
+    environment:
+      - POSTGRES_HOST=database
+      - POSTGRES_PORT=${DATABASE_PORT}
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_PASS=${DATABASE_PASSWORD}
+      - POSTGRES_DBNAME=${DATABASE_DBNAME}
+      - POSTGRES_HOST_READER=database
+      - POSTGRES_HOST_WRITER=database
+      - WEB_CONCURRENCY=10
+      - VSI_CACHE=TRUE
+      - GDAL_HTTP_MERGE_CONSECUTIVE_RANGES=YES
+      - GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR
+      - DB_MIN_CONN_SIZE=1
+      - DB_MAX_CONN_SIZE=1
+      - USE_API_HYDRATE=FALSE
+    ports:
+      - ${STAC_FASTAPI_PORT}:${STAC_FASTAPI_PORT}
+    depends_on:
+      - database
+      - pgstac
+    command: >
+      bash -c "
+        apt update && apt-get install -y postgresql-client
+        for i in {1..30}; do
+          pg_isready -h database -p ${DATABASE_PORT} && break
+          echo 'Waiting for database...'
+          sleep 5
+        done
+        uvicorn stac_fastapi.pgstac.app:app --host 0.0.0.0 --port ${STAC_FASTAPI_PORT}
+      "
+    volumes:
+      - ./data:/data:ro
+    networks:
+      - stac-network
+
+  file-server:
+    image: nginx:alpine
+    ports:
+      - ${FILE_SERVER_PORT}:80
+    volumes:
+      - ./data:/usr/share/nginx/html/data:ro
+      # Add CORS to allow stac-browser to work with JSON catalog
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - stac-network
+
+  # STAC Browser
+  stac-browser:
+    image: ghcr.io/radiantearth/stac-browser:latest
+    ports:
+      - ${STAC_BROWSER_PORT}:8080
+    environment:
+      # Ref: https://github.com/radiantearth/stac-browser/blob/main/docs/options.md#catalogurl
+      # To load from stac-fastapi + pgSTAC db
+      SB_catalogUrl: http://${HOST_IP}:${STAC_FASTAPI_PORT}
+      # To load directly from JSON catalog (lose dynamic features like search)
+      # SB_catalogUrl: http://${HOST_IP}:${FILE_SERVER_PORT}/data/stac/catalog.json
+      SB_cardViewMode: card
+      SB_crossOriginMedia: anonymous
+    networks:
+      - stac-network
+
+  # TiTiler for dynamic tiling
+  titiler:
+    image: ghcr.io/developmentseed/titiler:latest
+    ports:
+      - ${TILER_PORT}:80
+    environment:
+      # Ref: https://gdal.org/en/stable/user/configoptions.html
+      CPL_TMPDIR: /tmp
+      GDAL_CACHEMAX: 75%
+      GDAL_DISABLE_READDIR_ON_OPEN: EMPTY_DIR
+      GDAL_HTTP_MERGE_CONSECUTIVE_RANGES: YES
+      GDAL_HTTP_MULTIPLEX: YES
+      GDAL_HTTP_VERSION: 2
+      PYTHONWARNINGS: ignore
+      VSI_CACHE: TRUE
+      VSI_CACHE_SIZE: 5000000
+      # Ref: https://developmentseed.org/morecantile/usage/#list-supported-grids
+      # Add path to custom EPSG TileMatrixSets (morecantile will pick this up)
+      TILEMATRIXSET_DIRECTORY: /custom_tms
+    volumes:
+      - ./data:/data:ro
+      - ./custom_tms:/custom_tms:ro
+    networks:
+      - stac-network
+
   dashboard:
     build:
-      context: ./icenet-dashboard
+      context: ./environmental-stac-dashboard
     ports:
       - "${DASHBOARD_PORT}:${DASHBOARD_PORT}"
     depends_on:
-      - tiler-api
+      - stac-fastapi
     environment:
       - PYTHONPATH=/app/src
-      - TITILER_URL=http://${HOST_IP}:${TILER_PORT}
-      - DATA_URL=http://${HOST_IP}:${DATA_PORT}
-      - DASHBOARD_PORT=${DASHBOARD_PORT}
+      - TILER_URL=${TILER_URL}  # used by dashboard config
+      - STAC_FASTAPI_URL=${STAC_FASTAPI_URL}  # used by dashboard config
+      - DASHBOARD_PORT=${DASHBOARD_PORT} # used by `environmental-stac-dashboard/Dockerfile`
+    networks:
+      - stac-network
 
-  tiler-api:
-    build:
-      context: ./icenet-tiler-api
-    ports:
-      - "${TILER_PORT}:${TILER_PORT}"
-      - "${DATA_PORT}:${DATA_PORT}"
-    environment:
-      - TILER_PORT=${TILER_PORT}
-      - DATA_PORT=${DATA_PORT}
-      - WORKERS=${WORKERS}
-      - DATA_DIR=/app/mounted_vols/data
-    volumes:
-      - ./data:/app/mounted_vols/data
+# Should name this based on dev/stag/prod for dev, staging, production
+volumes:
+  postgres_data:
+    name: environmental_pgstac_volume
+
+networks:
+  stac-network:
+    driver: bridge
+
+# Reference Docker compose file found:
+# https://gitlab.eox.at/vs/stacture/-/blob/71b988de6c145567c0b1f4c5d4a4fb1cf1724200/docker-compose.yaml
+# https://github.com/microsoft/planetary-computer-apis/blob/main/pc-stac.dev.env

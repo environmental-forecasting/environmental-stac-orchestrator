@@ -1,0 +1,5 @@
+myhosts:
+  hosts:
+    environmental_stac:
+      ansible_host: ??.??.??.?? # To be updated with remote IP
+      ansible_user: bry??? # To be updated with username
