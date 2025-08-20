@@ -89,6 +89,9 @@ make down
 
 ### 5. Install and Run netCDF -> CoG Preprocessor
 
+> [!TIP]
+> Follow the README in [environmental-stac-generator](https://github.com/environmental-forecasting/environmental-stac-generator/) for more detail regarding this step.
+
 > [!NOTE]
 > This step will run without any of the Docker services running.
 
