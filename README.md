@@ -164,7 +164,7 @@ The services will be available on these default ports (configurable in `.env`):
 
 * **Dashboard UI:** http://localhost
 * **STAC Browser:** http://localhost:81
-* **STAC FastAPI:** http://localhost:8000
+* **STAC FastAPI:** http://localhost:8000/api.html
 * **File Server:** http://localhost:8001
 * **Tiler API:** http://localhost:8002
 * **PostgreSQL Database:** http://localhost:5432
@@ -211,3 +211,16 @@ pgstac-1 exited with code 0
 ```
 
 This is expected, and part of `pypgstac migrate`'s approach when initialising an empty database.
+
+### Examples
+
+#### STAC Browser
+
+![STAC Browser](docs/images/stac-browser-example.png "STAC Browser")
+
+#### Dashboard
+
+![Dashboard-icenet](docs/images/dashboard-icenet-example.png "Dashboard with IceNet forecast")
+
+CANARI example: (At altitude, so, not surface level variable, needs coastline overlay in future)
+![Dashboard-canari-ml](docs/images/dashboard-canari-ml-example.png "Dashboard with CANARI-ML forecast")
