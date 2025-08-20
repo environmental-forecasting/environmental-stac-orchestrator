@@ -111,17 +111,21 @@ services:
       - ${TILER_PORT}:80
     environment:
       # Ref: https://gdal.org/en/stable/user/configoptions.html
-      - CPL_TMPDIR=/tmp
-      - GDAL_CACHEMAX=75%
-      - GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR
-      - GDAL_HTTP_MERGE_CONSECUTIVE_RANGES=YES
-      - GDAL_HTTP_MULTIPLEX=YES
-      - GDAL_HTTP_VERSION=2
-      - PYTHONWARNINGS=ignore
-      - VSI_CACHE=TRUE
-      - VSI_CACHE_SIZE=5000000
+      CPL_TMPDIR: /tmp
+      GDAL_CACHEMAX: 75%
+      GDAL_DISABLE_READDIR_ON_OPEN: EMPTY_DIR
+      GDAL_HTTP_MERGE_CONSECUTIVE_RANGES: YES
+      GDAL_HTTP_MULTIPLEX: YES
+      GDAL_HTTP_VERSION: 2
+      PYTHONWARNINGS: ignore
+      VSI_CACHE: TRUE
+      VSI_CACHE_SIZE: 5000000
+      # Ref: https://developmentseed.org/morecantile/usage/#list-supported-grids
+      # Add path to custom EPSG TileMatrixSets (morecantile will pick this up)
+      TILEMATRIXSET_DIRECTORY: /custom_tms
     volumes:
       - ./data:/data:ro
+      - ./custom_tms:/custom_tms:ro
     networks:
       - stac-network
 
