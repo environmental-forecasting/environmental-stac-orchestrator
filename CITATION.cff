@@ -1,0 +1,32 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: environmental-stac-orchestrator
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Bryn Noel
+    family-names: Ubald
+    email: bryald@bas.ac.uk
+    affiliation: British Antarctic Survey
+    orcid: 'https://orcid.org/0000-0002-0206-7140'
+repository-code: >-
+  https://github.com/environmental-forecasting/environmental-stac-orchestrator
+abstract: >-
+  Orchestrates running of environmental STAC services for
+  serving STAC data catalog of netCDF weather forecast
+  predictions with pgSTAC, stac-fastapi, Titiler and Plotly
+  Dash dashboard for visualisation of forecasts
+keywords:
+  - STAC
+  - catalog
+  - weather
+  - dashboard
+  - titiler
+  - sea-ice
+  - forecast
+  - machine-learning
+license: MIT
