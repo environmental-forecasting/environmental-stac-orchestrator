@@ -31,6 +31,8 @@ clear-data:
 	}'
 
 # Removes the Docker volume used by pgSTAC if it exists.
+# Make sure the volume is not being used (run `make down` first)
+# or, will Error
 clear-db:
 	bash -c '{ \
 		read -p "This will delete the Docker volume '\''environmental_pgstac_volume'\''. Are you sure? [y/N] " REPLY; \
