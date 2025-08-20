@@ -19,9 +19,9 @@ meta-repo/
 └── Makefile # Top-level automation commands
 ```
 
-This is the basic workflow:
+This is the basic workflow, and how the different repositories interact between each other:
 
-![Architecture diagram](docs/images/forecast-services-dash-pgstac-leaflet-schematic.png "Architecture Diagram")
+![Architecture diagram](docs/images/orchestrator-services-dash-pgstac-leaflet-schematic.png "Architecture Diagram")
 
 ---
 
