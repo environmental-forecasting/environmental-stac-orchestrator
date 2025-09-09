@@ -227,3 +227,32 @@ This is expected, and part of `pypgstac migrate`'s approach when initialising an
 
 CANARI example: (At altitude, so, not surface level variable, needs coastline overlay in future)
 ![Dashboard-canari-ml](docs/images/dashboard-canari-ml-example.png "Dashboard with CANARI-ML forecast")
+
+
+---
+
+## Experimental Ansible Deployment
+
+This will be streamlined and integrated into the internal BAS Ansible repo in the future, but, for testing, you can deploy to the interal VMWare dev cluster by following these steps for a Rocky 9 VM:
+
+1. Update the [inventory](inventory.yaml) with the VM IP/Domain name, and the username (Ensure you have access to the internal network).
+
+1. Install Python 3.12 dependency (for `environmental-stac-generator`) using:
+
+    ``` bash
+    ansible-playbook --ask-become-pass -i inventory.yaml playbooks/python_install.yaml
+    ```
+
+    where, `--ask-become-pass` will ask you to enter the password needed for `sudo` access.
+
+1. Deploy the entire stack:
+
+    ``` bash
+    ansible-playbook --ask-become-pass -i inventory.yaml playbooks/deploy.yaml
+    ```
+
+1. There is an undeploy playbook as well which is outdated:
+
+    ``` bash
+    ansible-playbook --ask-become-pass -i inventory.yaml playbooks/undeploy.yaml
+    ```
