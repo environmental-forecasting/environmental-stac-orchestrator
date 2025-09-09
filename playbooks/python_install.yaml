@@ -7,16 +7,6 @@
     py312_path: /usr/bin/python3.12
 
   tasks:
-    #- name: Install Python 3.12 and pip
-    #  ansible.builtin.dnf:
-    #    name:
-    #      - python3.9-pip
-    #    state: latest
-    #      ##- name: Install EPEL
-    #      ##  ansible.builtin.dnf:
-    #      ##    name: epel-release
-    #      ##    state: latest
-
     - name: Install Python 3.12 and pip
       ansible.builtin.dnf:
         name:
@@ -24,12 +14,3 @@
           - python3.12-pip
           - python3.12-devel
         state: latest
-
-    #- name: Check if Python 3.12 is installed
-    #  raw: "{{ py312_path }} --version"
-    #  register: py312_check
-
-    #- name: Output Python 3.12 version
-    #  debug:
-    #    msg: "{{ py312_check.stdout_lines }}"
-
