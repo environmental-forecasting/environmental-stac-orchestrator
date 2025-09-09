@@ -148,6 +148,11 @@
       ansible.builtin.pip:
         name: git+https://github.com/environmental-forecasting/environmental-stac-generator.git
 
+    - name: Run symlink Docker mount override script
+      command: ./generate_data_symlink_override.sh
+      args:
+        chdir: "{{ dest_dir }}"
+
     #- name: Deploy dashboard
     #  ansible.builtin.command: ./generate_env.sh && make up
     #  args:
@@ -164,3 +169,16 @@
         project_src: "{{ dest_dir }}"
         files: compose.yaml
         state: present
+
+    # - name: Ingest STAC catalogs into pgSTAC database
+    #   shell:
+    #       cmd: |
+    #           find data/stac/ -name catalog.json | xargs -n 1 envstacgen ingest -o 
+
+    - name: Set up cron job to ingest catalogs routinely
+      ansible.builtin.cron:
+        name: "Ingest STAC catalogs"
+        minute: "0"
+        hour: "8"
+        job: "cd {{ dest_dir }}; find data/stac/ -name catalog.json | xargs -n 1 envstacgen ingest -o "
+        state: "present"
