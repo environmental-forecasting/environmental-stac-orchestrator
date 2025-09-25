@@ -169,3 +169,5 @@ data/*
 # But want to keep empty dir in this repo
 !data/.gitkeep
 
+.vscode/
+.env*
