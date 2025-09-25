@@ -1,24 +1,44 @@
 #!/bin/bash
 
-# This is used to create Docker compose override where
+# This is used to create Docker `compose.override.yaml`, when
 # `./data/` has symlinks that also need to be mounted
-# within the Docker container.
+# within the Docker container. Else, Docker will not be able to
+# see the real paths of the symlinks in the nginx Docker service.
 # Currently used in the Ansible deployment.
 
-# Base volumes for nginx service
-echo "services:"
-echo "  file-server:"
-echo "    volumes:"
-echo "      - ./data:/usr/share/nginx/html/data:ro"
-echo "      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro"
+OUTPUT_FILE="compose.override.yaml"
+DATA_DIR="./data"
+# Location where data is mounted by nginx
+CONTAINER_BASE="/usr/share/nginx/html/data"
+
+VOLUME_ENTRIES=()
 
 # Find and resolve symlinks inside ./data
-find ./data -type l | while read -r link; do
+while IFS= read -r link; do
   target=$(readlink -f "$link")
+  name=$(basename "$link")
 
   if [[ -e "$target" ]]; then
-    echo "      - \"$target:$target:ro\""
+    # Mount the symlink target to the expected path in container
+    container_target="${CONTAINER_BASE}/${name}"
+    VOLUME_ENTRIES+=("      - \"$target:$container_target:ro\"")
   else
-    echo "      # WARNING: Broken symlink: $link → $target" >&2
+    echo "Broken symlink: $link → $target" >&2
   fi
-done
+done < <(find "$DATA_DIR" -type l)
+
+# Write compose override file if any symlinks are found
+if (( ${#VOLUME_ENTRIES[@]} > 0 )); then
+  {
+    cat <<EOF
+services:
+  file-server:
+    volumes:
+EOF
+    printf "%s\n" "${VOLUME_ENTRIES[@]}"
+  } > "$OUTPUT_FILE"
+
+  echo "Created $OUTPUT_FILE with ${#VOLUME_ENTRIES[@]} fixed symlink mounts."
+else
+  echo "No symlink targets found outside data directory. Override file not created."
+fi
