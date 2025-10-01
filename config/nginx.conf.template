@@ -1,5 +1,5 @@
 server {
-    listen 80;
+    listen ${FILE_SERVER_PORT};
     root /usr/share/nginx/html;
     add_header 'Access-Control-Allow-Origin' '*' always;
     add_header 'Access-Control-Allow-Methods' 'GET, OPTIONS';
@@ -8,7 +8,7 @@ server {
     location / {
         try_files $uri $uri/ =404;
         # # Enable autoindexing, GH issue #6
-        # autoindex on;
+        autoindex on;
         # # Disable caching for static files, GH issue #6
         # add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
         # add_header Pragma "no-cache";
@@ -16,7 +16,7 @@ server {
     }
 
     # File browser style
-    location /data/ {
-        autoindex on;
-    }
+    # location /data/ {
+    #     autoindex on;
+    # }
 }
