@@ -1,4 +1,29 @@
 services:
+  # Traefik Reverse Proxy for HTTPS and Path Routing
+  traefik:
+    image: traefik:v2.10
+    command:
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # Global HTTP -> HTTPS redirect
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      # ACME configuration
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL:-admin@example.com}"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+    networks:
+      - stac-network
+
   # PostgreSQL database with PostGIS
   database:
     image: postgis/postgis:latest
@@ -37,7 +62,6 @@ services:
         echo Running PgSTAC migration...
         pypgstac migrate && echo PgSTAC migration completed
       "
-
     networks:
       - stac-network
 
@@ -72,8 +96,14 @@ services:
           echo 'Waiting for database...'
           sleep 5
         done
-        uvicorn stac_fastapi.pgstac.app:app --host 0.0.0.0 --port ${STAC_FASTAPI_PORT}
+        uvicorn stac_fastapi.pgstac.app:app --host 0.0.0.0 --port ${STAC_FASTAPI_PORT} --root-path /api
       "
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stac-fastapi.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.stac-fastapi.entrypoints=websecure"
+      - "traefik.http.routers.stac-fastapi.tls.certresolver=myresolver"
+      - "traefik.http.services.stac-fastapi.loadbalancer.server.port=${STAC_FASTAPI_PORT}"
     volumes:
       - ./data:/data:ro
     networks:
@@ -84,9 +114,17 @@ services:
     ports:
       - ${FILE_SERVER_PORT}:80
     volumes:
-      # - ./data:/usr/share/nginx/html/data:ro
+      - ./data:/usr/share/nginx/html/data:ro
       # Add CORS to allow stac-browser to work with JSON catalog
       - ./config/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.file-server.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/files`)"
+      - "traefik.http.routers.file-server.entrypoints=websecure"
+      - "traefik.http.routers.file-server.tls.certresolver=myresolver"
+      - "traefik.http.middlewares.file-server-strip.stripprefix.prefixes=/files"
+      - "traefik.http.routers.file-server.middlewares=file-server-strip"
+      - "traefik.http.services.file-server.loadbalancer.server.port=80"
     networks:
       - stac-network
 
@@ -98,12 +136,21 @@ services:
     environment:
       # Ref: https://github.com/radiantearth/stac-browser/blob/main/docs/options.md#catalogurl
       # To load from stac-fastapi + pgSTAC db
-      SB_catalogUrl: http://${HOST_IP}:${STAC_FASTAPI_PORT}
+      SB_catalogUrl: https://${DOMAIN_NAME}/api
       # To load directly from JSON catalog (lose dynamic features like search)
       # SB_catalogUrl: http://${HOST_IP}:${FILE_SERVER_PORT}/data/stac/catalog.json
+      SB_pathPrefix: /browser
       SB_cardViewMode: card
       SB_cardViewSort: desc
       SB_crossOriginMedia: anonymous
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stac-browser.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/browser`)"
+      - "traefik.http.routers.stac-browser.entrypoints=websecure"
+      - "traefik.http.routers.stac-browser.tls.certresolver=myresolver"
+      - "traefik.http.middlewares.stac-browser-strip.stripprefix.prefixes=/browser"
+      - "traefik.http.routers.stac-browser.middlewares=stac-browser-strip"
+      - "traefik.http.services.stac-browser.loadbalancer.server.port=8080"
     networks:
       - stac-network
 
@@ -126,9 +173,16 @@ services:
       # Ref: https://developmentseed.org/morecantile/usage/#list-supported-grids
       # Add path to custom EPSG TileMatrixSets (morecantile will pick this up)
       TILEMATRIXSET_DIRECTORY: /custom_tms
+      ROOT_PATH: /tiles
     volumes:
       - ./data:/data:ro
       - ./custom_tms:/custom_tms:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.titiler.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/tiles`)"
+      - "traefik.http.routers.titiler.entrypoints=websecure"
+      - "traefik.http.routers.titiler.tls.certresolver=myresolver"
+      - "traefik.http.services.titiler.loadbalancer.server.port=80"
     networks:
       - stac-network
 
@@ -144,6 +198,12 @@ services:
       - TILER_URL=${TILER_URL}  # used by dashboard config
       - STAC_FASTAPI_URL=${STAC_FASTAPI_URL}  # used by dashboard config
       - DASHBOARD_PORT=${DASHBOARD_PORT} # used by `environmental-stac-dashboard/Dockerfile`
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/`)"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls.certresolver=myresolver"
+      - "traefik.http.services.dashboard.loadbalancer.server.port=${DASHBOARD_PORT}"
     networks:
       - stac-network
 
