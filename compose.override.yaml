@@ -1,0 +1,26 @@
+services:
+  database:
+    ports:
+      - "${DATABASE_PORT:-5432}:5432"
+
+  stac-fastapi:
+    ports:
+      - "${STAC_FASTAPI_PORT:-8000}:8000"
+
+  file-server:
+    ports:
+      - "${FILE_SERVER_PORT:-8001}:80"
+
+  stac-browser:
+    ports:
+      - "${STAC_BROWSER_PORT:-81}:8080"
+
+  titiler:
+    ports:
+      - "${TILER_PORT:-8002}:80"
+
+  dashboard:
+    ports:
+      - "${DASHBOARD_PORT:-8082}:80"
+    volumes:
+      - ./environmental-stac-dashboard/src:/app/src:ro

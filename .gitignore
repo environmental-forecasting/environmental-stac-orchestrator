@@ -170,4 +170,7 @@ data/*
 !data/.gitkeep
 
 .vscode/
-.env*
+.env
+.env.*
+!.env.template
+tmp/
