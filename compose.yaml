@@ -106,7 +106,8 @@ services:
       GDAL_HTTP_VERSION: 2
       PYTHONWARNINGS: ignore
       VSI_CACHE: TRUE
-      VSI_CACHE_SIZE: 5000000
+      # 64 MiB GDAL VSI block cache (was 5 MiB); helps repeat tile reads.
+      VSI_CACHE_SIZE: 67108864
       TILEMATRIXSET_DIRECTORY: /custom_tms
       ROOT_PATH: /tiles
     volumes:
