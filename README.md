@@ -144,8 +144,7 @@ data/
 │   └── <collection_name>/
 │       └── <forecast_init_date>/
 │           ├── forecast_init_<forecast_init_date>_lead_<valid_time>.jpg        # Thumbnail file
-│           ├── forecast_init_<forecast_init_date>_lead_<valid_time>.tif        # COG w/ internal overviews
-│           └── forecast_init_<forecast_init_date>_lead_<valid_time>.tif.ovr    # External overviews
+│           └── forecast_init_<forecast_init_date>_lead_<valid_time>.tif        # COG w/ internal overviews
 ├── netcdf/
 │   └── <collection_name>/
 │       └── <forecast_init_date>/
