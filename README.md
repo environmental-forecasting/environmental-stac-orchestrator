@@ -224,6 +224,18 @@ To clear both `./data` and that environment’s database volume:
 make clear-all dev
 ```
 
+#### Leadtime scrub benchmark
+
+With the dashboard stack running (`make dev`), measure leadtime scrub latency from the host (Playwright drives Chromium against the live UI):
+
+```bash
+pip install -r environmental-stac-dashboard/scripts/requirements-bench.txt
+python3 environmental-stac-dashboard/scripts/bench_leadtime.py --label baseline
+python3 environmental-stac-dashboard/scripts/bench_leadtime.py --label after-change --compare baseline
+```
+
+Results are written under `environmental-stac-dashboard/bench/results/` (gitignored). Optional: `BENCH_URL`, `BENCH_CHROMIUM`.
+
 ### FAQ
 
 1. I see the following error with the database service:
