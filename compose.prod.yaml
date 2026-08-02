@@ -55,7 +55,8 @@ services:
       - "traefik.http.routers.stac-browser.middlewares=stac-browser-strip"
       - "traefik.http.services.stac-browser.loadbalancer.server.port=8080"
 
-  titiler:
+  # Route /tiles through the caching proxy (TiTiler remains internal-only).
+  tiler-cache:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.titiler.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/tiles`)"

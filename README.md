@@ -185,7 +185,7 @@ In **Development Mode** (`make dev`), services are published on host ports (conf
 * **STAC Browser:** http://localhost:81/browser
 * **STAC FastAPI:** http://localhost:8000
 * **File Server:** http://localhost:8001/data/
-* **Tiler API:** http://localhost:8002/tiles
+* **Tiler API:** http://localhost:8002/ (nginx cache in front of TiTiler; `X-Cache-Status` on `/cog/tiles/`)
 * **PostgreSQL Database:** localhost:5432
 
 In **Staging/Production Mode** (`make staging` or `make prod`), Traefik terminates HTTPS for `DOMAIN_NAME` (from `.env.staging` or `.env.production`) and routes by path prefix, for example:

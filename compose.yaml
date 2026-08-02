@@ -94,7 +94,7 @@ services:
     networks:
       - stac-network
 
-  # TiTiler for dynamic tiling
+  # TiTiler for dynamic tiling (internal; browsers hit tiler-cache).
   titiler:
     image: ghcr.io/developmentseed/titiler:latest
     environment:
@@ -108,11 +108,24 @@ services:
       VSI_CACHE: TRUE
       # 64 MiB GDAL VSI block cache (was 5 MiB); helps repeat tile reads.
       VSI_CACHE_SIZE: 67108864
+      # Bitnami/gunicorn worker count (tile renders are CPU-bound).
+      WEB_CONCURRENCY: ${TILER_WEB_CONCURRENCY:-4}
       TILEMATRIXSET_DIRECTORY: /custom_tms
       ROOT_PATH: /tiles
     volumes:
       - ./data:/data:ro
       - ./custom_tms:/custom_tms:ro
+    networks:
+      - stac-network
+
+  # Shared HTTP cache + long Cache-Control in front of TiTiler.
+  tiler-cache:
+    image: nginx:alpine
+    depends_on:
+      - titiler
+    volumes:
+      - ./config/tiler-nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - tiler_proxy_cache:/var/cache/nginx/tiles
     networks:
       - stac-network
 
@@ -140,6 +153,7 @@ services:
 volumes:
   postgres_data:
     name: ${POSTGRES_VOLUME_NAME:-environmental_pgstac_dev}
+  tiler_proxy_cache:
 
 networks:
   stac-network:

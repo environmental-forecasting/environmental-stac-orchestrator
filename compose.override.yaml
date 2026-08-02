@@ -15,7 +15,8 @@ services:
     ports:
       - "${STAC_BROWSER_PORT:-81}:8080"
 
-  titiler:
+  # Browsers use the caching proxy; TiTiler stays on the internal network.
+  tiler-cache:
     ports:
       - "${TILER_PORT:-8002}:80"
 
