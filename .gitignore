@@ -174,3 +174,9 @@ data/*
 .env.*
 !.env.template
 tmp/
+
+# Ansible-generated symlink volume mounts
+compose.data-symlinks.yaml
+
+# Let's Encrypt / Traefik TLS certificates
+letsencrypt/
