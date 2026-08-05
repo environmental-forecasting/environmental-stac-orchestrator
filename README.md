@@ -119,22 +119,22 @@ make down prod
 ```bash
 pip install -e environmental-stac-generator/
 
-envstacgen preprocess 1days <path_to_netcdf_predictions>
+envstacgen preprocess <path_to_netcdf_predictions>
 ```
 
 #### Example usage:
 
 To point to a directory with netCDF files:
 
-`envstacgen preprocess 1days results/predict/`
+`envstacgen preprocess results/predict/`
 
 Using wildcards:
 
-`envstacgen preprocess 1days raw_data/*.nc`
+`envstacgen preprocess raw_data/*.nc`
 
 You can include a non-default **STAC Collection** name (and multiple workers):
 
-`envstacgen preprocess 1days raw_data/*.nc -o -n <collection_name> -w 8`
+`envstacgen preprocess raw_data/*.nc -o -n <collection_name> -w 8`
 
 This command will create a `data/` directory with the JSON catalog and CoG outputs.
 
@@ -185,7 +185,7 @@ In **Development Mode** (`make dev`), services are published on host ports (conf
 * **STAC Browser:** http://localhost:81/browser
 * **STAC FastAPI:** http://localhost:8000
 * **File Server:** http://localhost:8001/data/
-* **Tiler API:** http://localhost:8002/ (nginx cache in front of TiTiler; `X-Cache-Status` on `/cog/tiles/`)
+* **Tiler API:** http://localhost/tiles (same-origin proxy via the dashboard -> tiler-cache; direct debug port remains http://localhost:8002/)
 * **PostgreSQL Database:** localhost:5432
 
 In **Staging/Production Mode** (`make staging` or `make prod`), Traefik terminates HTTPS for `DOMAIN_NAME` (from `.env.staging` or `.env.production`) and routes by path prefix, for example:

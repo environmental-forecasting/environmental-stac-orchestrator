@@ -135,12 +135,15 @@ services:
       context: ./environmental-stac-dashboard
     depends_on:
       - stac-fastapi
+      - tiler-cache
     environment:
       - PYTHONPATH=/app/src
       # Browser-facing tile URLs (user's machine). Keep public host/port or domain.
       - TILER_URL=${TILER_URL}
       # Server-side TiTiler / file-server calls run inside the container — Docker DNS.
       - TILER_INTERNAL_URL=http://titiler
+      # Same-origin ``/tiles`` proxy target (tiler-cache, not bare titiler).
+      - TILER_PROXY_URL=http://tiler-cache
       - FILE_SERVER_URL=${FILE_SERVER_URL}
       - FILE_SERVER_INTERNAL_URL=http://file-server
       # Server-side STAC client — Docker DNS, not 127.0.0.1.
