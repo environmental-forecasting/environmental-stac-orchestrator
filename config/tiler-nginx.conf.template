@@ -1,12 +1,18 @@
 # Reverse proxy in front of TiTiler: shared tile cache + long browser Cache-Control.
 # Tile URLs already encode COG path, TMS, colormap, and rescale, so responses are
 # immutable for a given URI.
+#
+# Rendered by the nginx image entrypoint (envsubst) from this template into
+# /etc/nginx/conf.d/default.conf. Cache sizing/TTL knobs come from the env file
+# (see TILER_CACHE_* in .env.template) - do not hardcode them here.
+#
+# Upstream hostname ``titiler`` is the Compose service name (Docker DNS SSOT).
 
 proxy_cache_path /var/cache/nginx/tiles
     levels=1:2
-    keys_zone=tiler_tiles:64m
-    max_size=2g
-    inactive=7d
+    keys_zone=tiler_tiles:${TILER_CACHE_KEYS_ZONE_SIZE}
+    max_size=${TILER_CACHE_MAX_SIZE}
+    inactive=${TILER_CACHE_INACTIVE}
     use_temp_path=off;
 
 upstream titiler_upstream {
@@ -31,7 +37,7 @@ server {
         proxy_pass http://titiler_upstream;
     }
 
-    # Dynamic COG XYZ tiles — cache rendered bytes; tell browsers to keep them.
+    # Dynamic COG XYZ tiles - cache rendered bytes; tell browsers to keep them.
     location ~* /cog/tiles/ {
         proxy_http_version 1.1;
         proxy_set_header Connection "";
@@ -45,7 +51,7 @@ server {
         proxy_cache tiler_tiles;
         proxy_cache_key $request_uri;
         proxy_cache_methods GET HEAD;
-        proxy_cache_valid 200 7d;
+        proxy_cache_valid 200 ${TILER_CACHE_VALID};
         proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
         proxy_ignore_headers Cache-Control Set-Cookie Vary;
         # Drop TiTiler's short max-age / CORS so we emit a single set of headers.

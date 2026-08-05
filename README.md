@@ -191,6 +191,7 @@ Traefik `Host()` rules accept `DOMAIN_NAME`, `localhost`, `127.0.0.1`, and `HOST
   * **STAC FastAPI:** http://localhost/api (Swagger UI at http://localhost/api/api.html)
   * **File Server:** http://localhost/files/data/
   * **Tiler API:** http://localhost/tiles
+  * Cache sizing/TTL: `TILER_CACHE_*` in the env file (rendered into nginx via `config/tiler-nginx.conf.template`).
   * **PostgreSQL Database:** localhost:5432 (direct port for CLI ingestion)
 
 * **Staging / Production Mode** (`make staging` or `make prod`):
