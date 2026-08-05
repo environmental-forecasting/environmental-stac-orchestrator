@@ -1,38 +1,108 @@
-- hosts: all
+# Tear down a single environmental-stac-orchestrator environment.
+#
+# Usage:
+#   ansible-playbook --ask-become-pass -i inventory.yaml playbooks/undeploy.yaml \
+#     -e deploy_env=staging
+#
+# Optional:
+#   dest_dir          (default /opt/environmental-stac-orchestrator)
+#   remove_repo=true  - delete the checkout after compose down
+#   remove_volumes=true - docker compose down -v (destroys Postgres for that env)
+#   purge_docker=true - remove Docker packages (destructive; off by default)
+
+- name: Undeploy environmental-stac-orchestrator
+  hosts: all
   become: true
   vars:
-    dest_dir: "/tmp/checkout"
+    deploy_env: "{{ deploy_env | default('staging') }}"
+    dest_dir: "{{ dest_dir | default('/opt/environmental-stac-orchestrator') }}"
+    remove_repo: "{{ remove_repo | default(false) }}"
+    remove_volumes: "{{ remove_volumes | default(false) }}"
+    purge_docker: "{{ purge_docker | default(false) }}"
+    ansible_python_interpreter: /usr/bin/python3.12
+
+  pre_tasks:
+    - name: Validate deploy_env
+      ansible.builtin.assert:
+        that:
+          - deploy_env in ['dev', 'staging', 'prod']
+        fail_msg: "deploy_env must be one of: dev, staging, prod (got {{ deploy_env }})"
+
+    - name: Resolve undeploy facts
+      ansible.builtin.set_fact:
+        ssh_deploy_user: "{{ ansible_user | default(ansible_user_id) }}"
+        env_file_name: "{{ {'dev': '.env.development', 'staging': '.env.staging', 'prod': '.env.production'}[deploy_env] }}"
+        compose_project_name: "stac-{{ deploy_env }}"
+        base_compose_files: "{{ ['compose.yaml', 'compose.override.yaml'] if deploy_env == 'dev' else ['compose.yaml', 'compose.prod.yaml'] }}"
+
   tasks:
-    - name: Remove Open VM Tools (Open source VMWare Tools)
-      ansible.builtin.dnf:
-        name: open-vm-tools
-        autoremove: yes
-        state: absent # implicit with above
+    - name: Check deploy directory
+      ansible.builtin.stat:
+        path: "{{ dest_dir }}"
+      register: dest_stat
 
-    - name: Remove Docker repository
-      ansible.builtin.command: rm -f /etc/yum.repos.d/docker-ce.repo
+    - name: Detect compose.data-symlinks.yaml
+      ansible.builtin.stat:
+        path: "{{ dest_dir }}/compose.data-symlinks.yaml"
+      register: data_symlinks_file
+      when: dest_stat.stat.exists
 
-    - name: Remove Docker
-      ansible.builtin.dnf:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-buildx-plugin
-          - docker-compose-plugin
-        autoremove: yes
+    - name: Assemble Compose file list
+      ansible.builtin.set_fact:
+        compose_files: "{{ base_compose_files + (['compose.data-symlinks.yaml'] if (data_symlinks_file is defined and data_symlinks_file.stat.exists) else []) }}"
+      when: dest_stat.stat.exists
+
+    - name: Stop and remove {{ deploy_env }} stack
+      community.docker.docker_compose_v2:
+        project_src: "{{ dest_dir }}"
+        project_name: "{{ compose_project_name }}"
+        files: "{{ compose_files }}"
+        env_files:
+          - "{{ env_file_name }}"
+        remove_volumes: "{{ remove_volumes | bool }}"
+        state: absent
+      when: dest_stat.stat.exists
+
+    - name: Remove ingest cron for this env
+      ansible.builtin.cron:
+        name: "envstacgen ingest ({{ deploy_env }})"
+        user: "{{ ssh_deploy_user }}"
         state: absent
 
-    - name: Remove other dependencies (Git, Apache, make)
-      ansible.builtin.dnf:
-        name:
-          - git
-          - httpd
-          - make
-        autoremove: yes
-        state: absent
-
-    - name: Remove git cloned repo
+    - name: Remove checkout directory
       ansible.builtin.file:
         path: "{{ dest_dir }}"
+        state: absent
+      when: (remove_repo | bool) and dest_stat.stat.exists
 
+    - name: Purge Docker packages
+      when: purge_docker | bool
+      block:
+        - name: Stop Docker service
+          ansible.builtin.service:
+            name: docker
+            state: stopped
+          ignore_errors: true
+
+        - name: Remove Docker packages
+          ansible.builtin.dnf:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+              - docker-buildx-plugin
+              - docker-compose-plugin
+            state: absent
+            autoremove: true
+
+        - name: Remove Docker CE repo file
+          ansible.builtin.file:
+            path: /etc/yum.repos.d/docker-ce.repo
+            state: absent
+
+    - name: Summarise undeploy
+      ansible.builtin.debug:
+        msg: >-
+          Stopped project {{ compose_project_name }}
+          (remove_repo={{ remove_repo }}, remove_volumes={{ remove_volumes }},
+          purge_docker={{ purge_docker }}).

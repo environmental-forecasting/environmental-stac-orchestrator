@@ -276,31 +276,88 @@ CANARI example: (At altitude, so, not surface level variable, needs coastline ov
 
 ---
 
-## Experimental Ansible Deployment
+## Ansible Deployment (VMware / Rocky 9)
 
 This will be streamlined and integrated into the internal BAS Ansible repo in the future, but, for testing, you can deploy to the internal VMware dev cluster by following these steps for a Rocky 9 VM.
 
-> [!WARNING]  
-> The playbooks are experimental and may still lag the Make/Compose workflow. Prefer `make prod` (or staging) on the host after configuring `.env.production`. Treat Ansible as a starting point until it is fully aligned.
+Playbooks under `playbooks/` bootstrap Docker on a Rocky 9 guest and bring up
+**one** Compose environment: `dev`, `staging`, or `prod` (mirrors `make
+dev|staging|prod`).
 
-1. Update the [inventory](inventory.yaml) with the VM IP/Domain name, and the username (Ensure you have access to the internal network).
+> [!WARNING]
+> The playbooks may still lag the Make/Compose workflow. Prefer `make
+> prod` (or staging/dev) on the host after configuring the matching
+> `.env.*` file. Treat Ansible as a starting point until it is fully
+> aligned.
 
-1. Install Python 3.12 dependency (for `environmental-stac-generator`) using:
+> [!NOTE]
+> Prefer iterating on the host with `make <env>` when you already have Docker
+> and a checkout. Use Ansible for first-time VMware bring-up or repeatable
+> remote deploys. Install collections with
+> `ansible-galaxy collection install -r requirements.yml` (needs
+> `community.docker`).
 
-    ``` bash
-    ansible-playbook --ask-become-pass -i inventory.yaml playbooks/python_install.yaml
-    ```
+### 1. Inventory
 
-    where, `--ask-become-pass` will ask you to enter the password needed for `sudo` access.
+Edit [`inventory.yaml`](inventory.yaml): set `ansible_host` and `ansible_user`
+(SSH access to the internal network / VM).
 
-1. Deploy the entire stack:
+### 2. Optional: Python 3.12 only
 
-    ``` bash
-    ansible-playbook --ask-become-pass -i inventory.yaml playbooks/deploy.yaml
-    ```
+```bash
+ansible-playbook --ask-become-pass -i inventory.yaml playbooks/python_install.yaml
+```
 
-1. There is an undeploy playbook as well which is outdated:
+where `--ask-become-pass` will prompt for the password needed for `sudo` (root) access.
 
-    ``` bash
-    ansible-playbook --ask-become-pass -i inventory.yaml playbooks/undeploy.yaml
-    ```
+(`deploy.yaml` also installs Python 3.12 if missing.)
+
+### 3. Deploy
+
+Checkout defaults to `/opt/environmental-stac-orchestrator`. Always pass a real
+`database_password` (never the template placeholder).
+
+**Development** (HTTP via Traefik path prefixes; `compose.override.yaml` only
+adds dashboard source hot-reload):
+
+```bash
+ansible-playbook --ask-become-pass -i inventory.yaml playbooks/deploy.yaml \
+  -e deploy_env=dev \
+  -e database_password='...' \
+  -e public_host=YOUR_VM_IP_OR_DNS
+```
+
+**Staging / production** (Traefik HTTPS via `compose.prod.yaml`):
+
+```bash
+ansible-playbook --ask-become-pass -i inventory.yaml playbooks/deploy.yaml \
+  -e deploy_env=staging \
+  -e database_password='...' \
+  -e domain_name=forecast.example.bas.ac.uk \
+  -e acme_email=admin@example.bas.ac.uk
+```
+
+where `--ask-become-pass` prompts for `sudo` privileges during host setup.
+
+Use `-e deploy_env=prod` for production. Staging defaults `ACME_CASERVER` to
+Let's Encrypt's staging CA (override with `-e acme_caserver=...`). Ensure DNS for
+`domain_name` points at the VM and ports 80/443 are reachable for ACME.
+
+Useful extras: `dest_dir`, `repo_version`, `icenet_data_src`,
+`install_cron_ingest=true|false`.
+
+Data symlinks under `./data` are written to `compose.data-symlinks.yaml` (not
+`compose.override.yaml`) so Ansible can mount resolved paths without clobbering
+the dev hot-reload bind-mount.
+
+### 4. Undeploy
+
+Stops the selected Compose project only (does not remove Docker by default):
+
+```bash
+ansible-playbook --ask-become-pass -i inventory.yaml playbooks/undeploy.yaml \
+  -e deploy_env=staging
+```
+
+Optional: `-e remove_volumes=true` (drops that env's Postgres volume),
+`-e remove_repo=true`, `-e purge_docker=true`.

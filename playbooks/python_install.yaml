@@ -1,3 +1,9 @@
+# Optional: install Python 3.12 on Rocky 9 before deploy.
+# deploy.yaml already installs python3.12 when needed; use this playbook alone
+# if you only want the interpreter / pip on the host.
+#
+#   ansible-playbook --ask-become-pass -i inventory.yaml playbooks/python_install.yaml
+
 - name: Install Python 3.12
   hosts: all
   become: true
@@ -13,4 +19,14 @@
           - python3.12
           - python3.12-pip
           - python3.12-devel
-        state: latest
+        state: present
+
+    - name: Confirm interpreter
+      ansible.builtin.command:
+        cmd: "{{ py312_path }} --version"
+      register: py_ver
+      changed_when: false
+
+    - name: Report Python version
+      ansible.builtin.debug:
+        msg: "{{ py_ver.stdout }}"

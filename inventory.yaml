@@ -1,5 +1,18 @@
+# Inventory for Ansible deploys of environmental-stac-orchestrator.
+#
+# Update ansible_host / ansible_user for your VMware VM. Pass secrets and
+# environment choice via -e on the command line (see README).
+
 myhosts:
   hosts:
     environmental_stac:
-      ansible_host: bsl-icenet-dev-s1 # To be updated with remote IP/name
-      ansible_user: bry??? # To be updated with username
+      # DNS name or IP of the Rocky 9 (or similar) guest.
+      ansible_host: bsl-icenet-dev-s1
+      ansible_user: CHANGE_ME
+      # Optional host defaults (override with ansible-playbook -e ...).
+      # deploy_env: staging
+      # dest_dir: /opt/environmental-stac-orchestrator
+      # public_host: YOUR_SERVER_OR_IP   # used for dev browser URLs
+      # domain_name: forecast.example.bas.ac.uk
+      # acme_email: admin@example.bas.ac.uk
+      # icenet_data_src: /path/to/source/catalog/data
