@@ -1,4 +1,4 @@
-.PHONY: attach build rebuild dev staging prod down clear-data clear-db clear-all
+.PHONY: attach build rebuild dev staging prod down clear-data clear-db clear-all docs-install docs docs-build
 
 # Per-environment compose (separate names so they do not clash)
 # --project-name: which running containers belong to this env (e.g. stac-dev-...)
@@ -62,3 +62,13 @@ clear-all:
 	$(if $(ENV),,$(error Usage: make clear-all dev|staging|prod))
 	@$(MAKE) clear-data
 	@$(MAKE) clear-db $(ENV)
+
+# Documentation
+docs-install:
+	uv sync --group docs --no-install-project
+
+docs:
+	uv run --group docs zensical serve
+
+docs-build:
+	uv run --group docs zensical build

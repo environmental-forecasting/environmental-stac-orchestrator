@@ -138,9 +138,9 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
-# mkdocs documentation
+# Documentation build output
 /site
-
+site/
 # mypy
 .mypy_cache/
 .dmypy.json

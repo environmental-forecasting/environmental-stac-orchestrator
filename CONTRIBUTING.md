@@ -30,8 +30,12 @@ and "help wanted" is open to whoever wants to implement it.
 ### Write Documentation
 
 `environmental-stac-orchestrator` could always use more documentation, whether as part of the
-official `environmental-stac-orchestrator` docs, in docstrings, or even on the web in blog posts,
+official docs site, in docstrings, or even on the web in blog posts,
 articles, and such.
+
+Preview the docs locally with `make docs-install` and `make docs`.
+Component docs belong in the generator and dashboard repositories so they
+ship with the code they describe.
 
 ### Submit Feedback
 

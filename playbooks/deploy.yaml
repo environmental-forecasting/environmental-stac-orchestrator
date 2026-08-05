@@ -303,7 +303,7 @@
         job: >-
           cd {{ dest_dir }} &&
           find data/stac/ -name catalog.json -print0 |
-          xargs -0 -n 1 envstacgen --env-file {{ env_file_name }} ingest -o
+          xargs -0 -n 1 envstacgen ingest --env-file {{ env_file_name }} -o
         state: "{{ 'present' if (cron_ingest_enabled | bool) else 'absent' }}"
 
     - name: Summarise deployment
