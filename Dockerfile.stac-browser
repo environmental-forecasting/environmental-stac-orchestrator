@@ -1,0 +1,46 @@
+# Build radiatearth STAC Browser so it works under Traefik PathPrefix(/browser).
+# The stock ghcr image is built with publicPath "/" (and Vue base "/"), so when
+# served at /browser/ the SPA loads a blank page even though index.html returns
+# 200. v5 builds with Vite base "./" and the entrypoint sets <base href> plus an
+# nginx location from SB_pathPrefix.
+ARG STAC_BROWSER_VERSION=v5.0.0
+
+FROM node:lts-alpine AS build-step
+ARG STAC_BROWSER_VERSION
+ARG DYNAMIC_CONFIG=true
+ARG historyMode=history
+ARG SB_CONFIG=""
+ENV DYNAMIC_CONFIG="${DYNAMIC_CONFIG}"
+ENV SB_historyMode="${historyMode}"
+ENV SB_CONFIG="${SB_CONFIG}"
+
+RUN apk add --no-cache git
+WORKDIR /app
+RUN git clone --depth 1 --branch "${STAC_BROWSER_VERSION}" \
+      https://github.com/radiantearth/stac-browser.git .
+
+RUN npm install
+# Uncomment the runtime-config / <base> block in index.html (DYNAMIC_CONFIG).
+RUN [ "${DYNAMIC_CONFIG}" = "true" ] && sed -i 's/<!--RC//;s/RC-->//' index.html
+RUN npm run build
+
+FROM nginxinc/nginx-unprivileged:1-alpine
+ARG pathPrefix=/browser/
+
+USER root
+RUN apk add --no-cache jq pcre-tools
+
+COPY --from=build-step /app/config.schema.json /etc/nginx/conf.d/config.schema.json
+COPY --from=build-step /app/dist /usr/share/nginx/html
+COPY --from=build-step /app/docker/default.conf /etc/nginx/conf.d/default.conf.template
+COPY --from=build-step /app/docker/docker-entrypoint.sh /docker-entrypoint.d/40-stac-browser-entrypoint.sh
+
+RUN rm -f /etc/nginx/conf.d/default.conf \
+    && chown -R nginx:nginx /usr/share/nginx/html \
+    && chmod +x /docker-entrypoint.d/40-stac-browser-entrypoint.sh
+
+ENV SB_pathPrefix="${pathPrefix}"
+
+EXPOSE 8080
+STOPSIGNAL SIGTERM
+USER nginx

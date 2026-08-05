@@ -1,4 +1,34 @@
 services:
+  # Reverse proxy / edge router (serves all path prefixes under localhost or DOMAIN_NAME)
+  traefik:
+    image: traefik:v3.7.10
+    command:
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "${TRAEFIK_HTTP_PORT:-80}:80"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - stac-network
+
+  # Static portal at / (links to dashboard, API, browser, files, tiles)
+  landing:
+    image: nginx:alpine
+    volumes:
+      - ./config/landing/index.html:/usr/share/nginx/html/index.html:ro
+      - ./config/landing/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.landing.rule=(Host(`${DOMAIN_NAME}`) || Host(`localhost`) || Host(`127.0.0.1`) || Host(`${HOST_IP}`)) && Path(`/`)"
+      - "traefik.http.routers.landing.entrypoints=web"
+      - "traefik.http.routers.landing.priority=1"
+      - "traefik.http.services.landing.loadbalancer.server.port=80"
+    networks:
+      - stac-network
+
   # PostgreSQL database with PostGIS
   database:
     image: postgis/postgis:latest
@@ -11,6 +41,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
       - ./config/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    ports:
+      - "${DATABASE_PORT:-5432}:5432"
     networks:
       - stac-network
 
@@ -55,21 +87,33 @@ services:
       - DB_MIN_CONN_SIZE=1
       - DB_MAX_CONN_SIZE=1
       - USE_API_HYDRATE=FALSE
+      - ROOT_PATH=/api
     depends_on:
       - database
       - pgstac
     command: >
-      bash -c "
+      bash -c '
         apt update && apt-get install -y postgresql-client
         for i in {1..30}; do
-          pg_isready -h database -p ${DATABASE_PORT:-5432} && break
-          echo 'Waiting for database...'
+          pg_isready -h database -p $${DATABASE_PORT:-5432} && break
+          echo "Waiting for database..."
           sleep 5
         done
-        uvicorn stac_fastapi.pgstac.app:app --host 0.0.0.0 --port 8000 --root-path \"$${FASTAPI_ROOT_PATH:-}\"
-      "
+        ROOT_PATH_ARG=""
+        if [ -n "$${ROOT_PATH:-}" ]; then
+          ROOT_PATH_ARG="--root-path $${ROOT_PATH}"
+        fi
+        exec uvicorn stac_fastapi.pgstac.app:app --host 0.0.0.0 --port 8000 --proxy-headers $${ROOT_PATH_ARG}
+      '
     volumes:
       - ./data:/data:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stac-fastapi.rule=(Host(`${DOMAIN_NAME}`) || Host(`localhost`) || Host(`127.0.0.1`) || Host(`${HOST_IP}`)) && PathPrefix(`/api`)"
+      - "traefik.http.routers.stac-fastapi.entrypoints=web"
+      - "traefik.http.middlewares.stac-fastapi-strip.stripprefix.prefixes=/api"
+      - "traefik.http.routers.stac-fastapi.middlewares=stac-fastapi-strip"
+      - "traefik.http.services.stac-fastapi.loadbalancer.server.port=8000"
     networks:
       - stac-network
 
@@ -79,18 +123,37 @@ services:
     volumes:
       - ./data:/usr/share/nginx/html/data:ro
       - ./config/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.file-server.rule=(Host(`${DOMAIN_NAME}`) || Host(`localhost`) || Host(`127.0.0.1`) || Host(`${HOST_IP}`)) && PathPrefix(`/files`)"
+      - "traefik.http.routers.file-server.entrypoints=web"
+      - "traefik.http.middlewares.file-server-strip.stripprefix.prefixes=/files"
+      - "traefik.http.routers.file-server.middlewares=file-server-strip"
+      - "traefik.http.services.file-server.loadbalancer.server.port=80"
     networks:
       - stac-network
 
-  # STAC Browser
+  # STAC Browser - custom image (Dockerfile.stac-browser). Keep pathPrefix,
+  # SB_pathPrefix, and Traefik PathPrefix(`/browser`) identical or the SPA blanks.
   stac-browser:
-    image: ghcr.io/radiantearth/stac-browser:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.stac-browser
+      args:
+        pathPrefix: /browser/
+        STAC_BROWSER_VERSION: v5.0.0
+    image: environmental-stac-browser:5.0.0-browser
     environment:
-      SB_catalogUrl: ${STAC_FASTAPI_URL}
-      SB_pathPrefix: /browser
-      SB_cardViewMode: card
-      SB_cardViewSort: desc
-      SB_crossOriginMedia: anonymous
+      - SB_catalogUrl=/api
+      - SB_pathPrefix=/browser/
+      - SB_cardViewMode=card
+      - SB_cardViewSort=desc
+      - SB_crossOriginMedia=anonymous
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stac-browser.rule=(Host(`${DOMAIN_NAME}`) || Host(`localhost`) || Host(`127.0.0.1`) || Host(`${HOST_IP}`)) && PathPrefix(`/browser`)"
+      - "traefik.http.routers.stac-browser.entrypoints=web"
+      - "traefik.http.services.stac-browser.loadbalancer.server.port=8080"
     networks:
       - stac-network
 
@@ -126,6 +189,13 @@ services:
     volumes:
       - ./config/tiler-nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - tiler_proxy_cache:/var/cache/nginx/tiles
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.titiler.rule=(Host(`${DOMAIN_NAME}`) || Host(`localhost`) || Host(`127.0.0.1`) || Host(`${HOST_IP}`)) && PathPrefix(`/tiles`)"
+      - "traefik.http.routers.titiler.entrypoints=web"
+      - "traefik.http.middlewares.tiler-cache-strip.stripprefix.prefixes=/tiles"
+      - "traefik.http.routers.titiler.middlewares=tiler-cache-strip"
+      - "traefik.http.services.titiler.loadbalancer.server.port=80"
     networks:
       - stac-network
 
@@ -138,18 +208,22 @@ services:
       - tiler-cache
     environment:
       - PYTHONPATH=/app/src
-      # Browser-facing tile URLs (user's machine). Keep public host/port or domain.
+      # Browser-facing tile URLs (Traefik /tiles -> tiler-cache).
       - TILER_URL=${TILER_URL}
-      # Server-side TiTiler / file-server calls run inside the container — Docker DNS.
+      # Server-side TiTiler / file-server calls run inside the container - Docker DNS.
       - TILER_INTERNAL_URL=http://titiler
-      # Same-origin ``/tiles`` proxy target (tiler-cache, not bare titiler).
-      - TILER_PROXY_URL=http://tiler-cache
       - FILE_SERVER_URL=${FILE_SERVER_URL}
       - FILE_SERVER_INTERNAL_URL=http://file-server
-      # Server-side STAC client — Docker DNS, not 127.0.0.1.
+      # Server-side STAC client (Docker DNS). Not taken from the env file.
       - STAC_FASTAPI_URL=http://stac-fastapi:8000
       - DASHBOARD_PORT=80
+      - DASHBOARD_URL_BASE_PATHNAME=/dashboard/
       - DASHBOARD_DEBUG=${DASHBOARD_DEBUG:-false}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=(Host(`${DOMAIN_NAME}`) || Host(`localhost`) || Host(`127.0.0.1`) || Host(`${HOST_IP}`)) && PathPrefix(`/dashboard`)"
+      - "traefik.http.routers.dashboard.entrypoints=web"
+      - "traefik.http.services.dashboard.loadbalancer.server.port=80"
     networks:
       - stac-network
 

@@ -1,6 +1,11 @@
+# ------------------------------------------------------------------------------
+# Production / Staging overlay: enables TLS, ACME, and HTTPS entrypoints.
+# Layered on top of compose.yaml via:
+#   docker compose -f compose.yaml -f compose.prod.yaml --env-file .env.<env> up -d
+# ------------------------------------------------------------------------------
+
 services:
   traefik:
-    image: traefik:v2.10
     command:
       - "--api.insecure=false"
       - "--providers.docker=true"
@@ -22,52 +27,33 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./letsencrypt:/letsencrypt"
-    networks:
-      - stac-network
+
+  landing:
+    labels:
+      - "traefik.http.routers.landing.entrypoints=websecure"
+      - "traefik.http.routers.landing.tls.certresolver=myresolver"
 
   stac-fastapi:
-    environment:
-      - FASTAPI_ROOT_PATH=/api
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.stac-fastapi.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/api`)"
       - "traefik.http.routers.stac-fastapi.entrypoints=websecure"
       - "traefik.http.routers.stac-fastapi.tls.certresolver=myresolver"
-      - "traefik.http.services.stac-fastapi.loadbalancer.server.port=8000"
 
   file-server:
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.file-server.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/files`)"
       - "traefik.http.routers.file-server.entrypoints=websecure"
       - "traefik.http.routers.file-server.tls.certresolver=myresolver"
-      - "traefik.http.middlewares.file-server-strip.stripprefix.prefixes=/files"
-      - "traefik.http.routers.file-server.middlewares=file-server-strip"
-      - "traefik.http.services.file-server.loadbalancer.server.port=80"
 
   stac-browser:
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.stac-browser.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/browser`)"
       - "traefik.http.routers.stac-browser.entrypoints=websecure"
       - "traefik.http.routers.stac-browser.tls.certresolver=myresolver"
-      - "traefik.http.middlewares.stac-browser-strip.stripprefix.prefixes=/browser"
-      - "traefik.http.routers.stac-browser.middlewares=stac-browser-strip"
-      - "traefik.http.services.stac-browser.loadbalancer.server.port=8080"
 
-  # Route /tiles through the caching proxy (TiTiler remains internal-only).
   tiler-cache:
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.titiler.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/tiles`)"
       - "traefik.http.routers.titiler.entrypoints=websecure"
       - "traefik.http.routers.titiler.tls.certresolver=myresolver"
-      - "traefik.http.services.titiler.loadbalancer.server.port=80"
 
   dashboard:
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`${DOMAIN_NAME}`) && PathPrefix(`/`)"
       - "traefik.http.routers.dashboard.entrypoints=websecure"
       - "traefik.http.routers.dashboard.tls.certresolver=myresolver"
-      - "traefik.http.services.dashboard.loadbalancer.server.port=80"
