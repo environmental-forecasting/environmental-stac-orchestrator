@@ -165,12 +165,11 @@ services:
       GDAL_CACHEMAX: 75%
       GDAL_DISABLE_READDIR_ON_OPEN: EMPTY_DIR
       GDAL_HTTP_MERGE_CONSECUTIVE_RANGES: YES
-      GDAL_HTTP_MULTIPLEX: YES
-      GDAL_HTTP_VERSION: 2
       PYTHONWARNINGS: ignore
       VSI_CACHE: TRUE
-      # 64 MiB GDAL VSI block cache (was 5 MiB); helps repeat tile reads.
-      VSI_CACHE_SIZE: 67108864
+      # 512 MiB GDAL VSI block cache per open file handle; helps repeat tile
+      # reads from local COGs without re-decoding from disk each time.
+      VSI_CACHE_SIZE: 536870912
       # Bitnami/gunicorn worker count (tile renders are CPU-bound).
       WEB_CONCURRENCY: ${TILER_WEB_CONCURRENCY:-4}
       TILEMATRIXSET_DIRECTORY: /custom_tms
