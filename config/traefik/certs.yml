@@ -1,0 +1,10 @@
+# Self-signed / file-mounted certs for local `make dev` (see make certs).
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/dev.crt
+        keyFile: /certs/dev.key
+  certificates:
+    - certFile: /certs/dev.crt
+      keyFile: /certs/dev.key

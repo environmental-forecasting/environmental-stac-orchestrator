@@ -1,4 +1,52 @@
+# Local development overlay (auto-loaded with compose.yaml for `make dev`).
+# Staging/prod use explicit -f compose.yaml -f compose.prod.yaml and do not load this file.
 services:
+  traefik:
+    command:
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.filename=/etc/traefik/certs.yml"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+    ports:
+      - "${TRAEFIK_HTTP_PORT:-80}:80"
+      - "${TRAEFIK_HTTPS_PORT:-443}:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./config/traefik/certs.yml:/etc/traefik/certs.yml:ro"
+      - "./certs:/certs:ro"
+
+  landing:
+    labels:
+      - "traefik.http.routers.landing.entrypoints=websecure"
+      - "traefik.http.routers.landing.tls=true"
+
+  stac-fastapi:
+    labels:
+      - "traefik.http.routers.stac-fastapi.entrypoints=websecure"
+      - "traefik.http.routers.stac-fastapi.tls=true"
+
+  file-server:
+    labels:
+      - "traefik.http.routers.file-server.entrypoints=websecure"
+      - "traefik.http.routers.file-server.tls=true"
+
+  stac-browser:
+    labels:
+      - "traefik.http.routers.stac-browser.entrypoints=websecure"
+      - "traefik.http.routers.stac-browser.tls=true"
+
+  tiler-cache:
+    labels:
+      - "traefik.http.routers.titiler.entrypoints=websecure"
+      - "traefik.http.routers.titiler.tls=true"
+
   dashboard:
     volumes:
       - ./environmental-stac-dashboard/src:/app/src:ro
+    labels:
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls=true"

@@ -1,4 +1,4 @@
-.PHONY: attach build rebuild dev staging prod down clear-data clear-db clear-all docs-install docs docs-build
+.PHONY: attach build rebuild certs dev staging prod down clear-data clear-db clear-all docs-install docs docs-build
 
 # Per-environment compose (separate names so they do not clash)
 # --project-name: which running containers belong to this env (e.g. stac-dev-...)
@@ -19,12 +19,26 @@ UP_FLAGS := $(if $(filter attach,$(MAKECMDGOALS)),,-d)
 attach:
 	@:
 
+# Self-signed TLS material for local Traefik (compose.override.yaml). Idempotent.
+certs:
+	@mkdir -p certs
+	@if [ ! -f certs/dev.crt ] || [ ! -f certs/dev.key ]; then \
+		openssl req -x509 -nodes -newkey rsa:2048 \
+			-keyout certs/dev.key -out certs/dev.crt -days 825 \
+			-subj "/CN=localhost" \
+			-addext "subjectAltName=DNS:localhost,IP:127.0.0.1,IP:0:0:0:0:0:0:0:1"; \
+		echo "Generated certs/dev.crt and certs/dev.key"; \
+	fi
+
 # Start an environment: make dev|staging|prod
 # With down / clear-db / clear-all, this is only a name tag (nothing is started)
 dev staging prod:
 ifneq ($(filter down clear-db clear-all,$(MAKECMDGOALS)),)
 	@:
 else
+ifeq ($@,dev)
+	@$(MAKE) certs
+endif
 	$(COMPOSE_$@) up $(UP_FLAGS)
 endif
 

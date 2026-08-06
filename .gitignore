@@ -180,3 +180,4 @@ compose.data-symlinks.yaml
 
 # Let's Encrypt / Traefik TLS certificates
 letsencrypt/
+certs/
