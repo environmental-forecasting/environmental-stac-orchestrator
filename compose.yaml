@@ -170,6 +170,12 @@ services:
       # 512 MiB GDAL VSI block cache per open file handle; helps repeat tile
       # reads from local COGs without re-decoding from disk each time.
       VSI_CACHE_SIZE: 536870912
+      # Multi-threaded GDAL block reading and decompression across all container vCPUs
+      GDAL_NUM_THREADS: "ALL_CPUS"
+      # Dedicated 256 MiB memory buffer for coordinate reprojection (gdalwarp)
+      GDAL_WARP_MEMLIMIT: "256"
+      # Increased dataset handle pool to prevent reopening COGs for concurrent tiles
+      GDAL_MAX_DATASET_POOL_SIZE: "512"
       # Bitnami/gunicorn worker count (tile renders are CPU-bound).
       WEB_CONCURRENCY: ${TILER_WEB_CONCURRENCY:-4}
       TILEMATRIXSET_DIRECTORY: /custom_tms
