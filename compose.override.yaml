@@ -9,11 +9,13 @@ services:
       - "--providers.file.filename=/etc/traefik/certs.yml"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http3"
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
     ports:
       - "${TRAEFIK_HTTP_PORT:-80}:80"
-      - "${TRAEFIK_HTTPS_PORT:-443}:443"
+      - "${TRAEFIK_HTTPS_PORT:-443}:443/tcp"
+      - "${TRAEFIK_HTTPS_PORT:-443}:443/udp"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./config/traefik/certs.yml:/etc/traefik/certs.yml:ro"
