@@ -24,6 +24,13 @@ server {
     listen 80;
     server_tokens off;
 
+    # Low-latency delivery & file descriptor caching for cached tile slices
+    tcp_nodelay on;
+    open_file_cache max=10000 inactive=60m;
+    open_file_cache_valid 120s;
+    open_file_cache_min_uses 1;
+    open_file_cache_errors on;
+
     # Large tile query strings (file:///data/... + style params).
     client_max_body_size 0;
 
@@ -53,6 +60,9 @@ server {
         proxy_cache_methods GET HEAD;
         proxy_cache_valid 200 ${TILER_CACHE_VALID};
         proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+        proxy_cache_lock on;
+        proxy_cache_lock_timeout 5s;
+        proxy_cache_lock_age 5s;
         proxy_ignore_headers Cache-Control Set-Cookie Vary;
         # Drop TiTiler's short max-age / CORS so we emit a single set of headers.
         proxy_hide_header Cache-Control;
