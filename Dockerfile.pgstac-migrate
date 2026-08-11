@@ -1,0 +1,6 @@
+# One-shot `pypgstac migrate`. Schema version is the pip pin below.
+# There is no ghcr.io/stac-utils/pgstac:v0.9.12 image.
+
+FROM python:3.12.11-slim-bookworm
+
+RUN pip install --no-cache-dir 'pypgstac[psycopg]==0.9.12'
