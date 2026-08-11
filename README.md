@@ -222,6 +222,18 @@ Traefik `Host()` rules accept `DOMAIN_NAME`, `localhost`, `127.0.0.1`, and `HOST
 
 ### 8. Additional Make commands
 
+#### Build images
+
+Build (or rebuild without cache) for one environment, same pattern as `down`:
+
+```bash
+make build dev
+make build staging
+make rebuild prod
+```
+
+After rebuilding a service that bakes files into its image (for example `docs`), recreate it with `make <env>` or `docker compose ... up -d <service>`.
+
 #### Clear outputs
 
 > [!CAUTION]

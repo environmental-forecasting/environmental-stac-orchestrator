@@ -31,9 +31,10 @@ certs:
 	fi
 
 # Start an environment: make dev|staging|prod
-# With down / clear-db / clear-all, this is only a name tag (nothing is started)
+# With down / build / rebuild / clear-db / clear-all, this is only a name tag
+# (nothing is started).
 dev staging prod:
-ifneq ($(filter down clear-db clear-all,$(MAKECMDGOALS)),)
+ifneq ($(filter down build rebuild clear-db clear-all,$(MAKECMDGOALS)),)
 	@:
 else
 ifeq ($@,dev)
@@ -48,11 +49,15 @@ down:
 	$(if $(ENV),,$(error Usage: make down dev|staging|prod))
 	$(COMPOSE_$(ENV)) down
 
+# Build images for an environment, e.g. make build dev
+# Usage: make build|rebuild dev|staging|prod
 build:
-	docker compose --project-name stac-dev --env-file .env.development build
+	$(if $(ENV),,$(error Usage: make build dev|staging|prod))
+	$(COMPOSE_$(ENV)) build
 
 rebuild:
-	docker compose --project-name stac-dev --env-file .env.development build --no-cache
+	$(if $(ENV),,$(error Usage: make rebuild dev|staging|prod))
+	$(COMPOSE_$(ENV)) build --no-cache
 
 confirm = read -p "$(1) [y/N] " r; [ "$$r" = y ] || { echo Aborted.; exit 1; }
 
