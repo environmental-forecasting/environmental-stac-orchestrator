@@ -15,16 +15,19 @@ Meta-repository that coordinates deployment of a modular architecture for proces
 - End-to-end bring-up (env files, preprocess, ingest)
 - Ansible notes for Rocky 9 / VMware
 
-Component CLI and UI detail live in their own docs (same PR as the code):
+Each component also has its own docs site. On a running deployment, open
+[/docs/](/docs/) for the documentation hub, then pick orchestrator, dashboard,
+or generator.
 
-- [environmental-stac-generator](https://github.com/environmental-forecasting/environmental-stac-generator)
-- [environmental-stac-dashboard](https://github.com/environmental-forecasting/environmental-stac-dashboard)
-
-## Quick links
+## Quick links (live stack)
 
 | Path (dev) | Service |
 | ---------- | ------- |
 | `/` | Landing portal |
+| `/docs/` | Documentation hub |
+| `/docs/orchestrator/` | Orchestrator docs |
+| `/docs/dashboard/` | Dashboard docs |
+| `/docs/generator/` | Generator docs |
 | `/dashboard/` | Forecast dashboard |
 | `/browser/` | STAC Browser |
 | `/api` | STAC FastAPI |

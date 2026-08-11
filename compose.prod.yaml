@@ -35,6 +35,11 @@ services:
       - "traefik.http.routers.landing.entrypoints=websecure"
       - "traefik.http.routers.landing.tls.certresolver=myresolver"
 
+  docs:
+    labels:
+      - "traefik.http.routers.docs.entrypoints=websecure"
+      - "traefik.http.routers.docs.tls.certresolver=myresolver"
+
   stac-fastapi:
     labels:
       - "traefik.http.routers.stac-fastapi.entrypoints=websecure"

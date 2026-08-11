@@ -5,11 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="BAS Environmental STAC - catalogued environmental forecasts. Access the interactive dashboard, STAC API, browser, file server, tiler, and documentation."
+      content="BAS Environmental STAC documentation. Orchestrator, dashboard, and generator docs for this deployment."
     />
-    <title>BAS Environmental STAC</title>
+    <title>Documentation - BAS Environmental STAC</title>
     <style>
-      /* --- Design tokens (mirroring dashboard shell) --- */
       :root {
         --shell-top: #000000;
         --shell-bottom: #001435;
@@ -20,8 +19,6 @@
           #001435 70%,
           var(--shell-bottom) 100%
         );
-
-        /* Glass panel */
         --glass-bg: rgba(18, 22, 32, 0.72);
         --glass-bg-hover: rgba(26, 33, 50, 0.82);
         --glass-border: rgba(255, 255, 255, 0.10);
@@ -30,17 +27,10 @@
         --glass-shadow: 0 8px 28px rgba(0, 0, 0, 0.40);
         --glass-shadow-hover: 0 12px 36px rgba(0, 0, 0, 0.55);
         --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.10);
-
-        /* Accent (dashboard blue) */
         --accent: #7aa8f7;
-        --accent-dim: #3d7ab5;
-
-        /* Text */
         --text: #e8ecf4;
         --muted: #c5cede;
         --muted-dim: rgba(197, 206, 222, 0.65);
-
-        /* System stacks only (no CDN fonts - works on locked-down VMs). */
         --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
           Arial, sans-serif;
         --font-serif: Georgia, "Times New Roman", Times, serif;
@@ -59,7 +49,6 @@
         background-attachment: fixed;
       }
 
-      /* --- Noise overlay (subtle texture matching dashboard feel) --- */
       body::before {
         content: "";
         position: fixed;
@@ -69,7 +58,6 @@
         z-index: 0;
       }
 
-      /* --- Layout --- */
       main {
         position: relative;
         z-index: 1;
@@ -81,7 +69,6 @@
         gap: 2.5rem;
       }
 
-      /* --- Header --- */
       .header {
         display: flex;
         flex-direction: column;
@@ -110,7 +97,25 @@
         max-width: 48rem;
       }
 
-      /* --- Divider --- */
+      .header__back {
+        font-size: 1.05rem;
+        font-weight: 500;
+        letter-spacing: normal;
+        text-transform: none;
+        opacity: 1;
+        margin-top: 0.75rem;
+      }
+
+      .header__back a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      .header__back a:hover {
+        color: #f2f5fb;
+        text-decoration: underline;
+      }
+
       .divider {
         height: 1px;
         background: linear-gradient(
@@ -123,7 +128,6 @@
         border: none;
       }
 
-      /* --- Service grid --- */
       .services {
         display: grid;
         grid-template-columns: 1fr;
@@ -144,8 +148,6 @@
         }
       }
 
-      /* --- Glass card --- */
-      /* Stretch cards to fill grid rows equally */
       .services li {
         display: flex;
       }
@@ -164,7 +166,6 @@
         box-shadow: var(--glass-shadow), var(--glass-inset);
         color: inherit;
         text-decoration: none;
-        /* Staggered fade-up entrance */
         opacity: 0;
         transform: translateY(12px);
         animation: card-in 0.45s ease forwards;
@@ -178,9 +179,6 @@
       .card:nth-child(1) { animation-delay: 0.05s; }
       .card:nth-child(2) { animation-delay: 0.12s; }
       .card:nth-child(3) { animation-delay: 0.19s; }
-      .card:nth-child(4) { animation-delay: 0.26s; }
-      .card:nth-child(5) { animation-delay: 0.33s; }
-      .card:nth-child(6) { animation-delay: 0.40s; }
 
       @keyframes card-in {
         to { opacity: 1; transform: translateY(0); }
@@ -195,7 +193,6 @@
         outline: none;
       }
 
-      /* --- Icon badge --- */
       .card__icon {
         flex: 0 0 auto;
         width: 2.4rem;
@@ -206,7 +203,6 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.1rem;
         transition: background 0.18s ease, border-color 0.18s ease;
       }
 
@@ -216,7 +212,6 @@
         border-color: rgba(122, 168, 247, 0.4);
       }
 
-      /* --- Card body --- */
       .card__body {
         display: flex;
         flex-direction: column;
@@ -231,6 +226,7 @@
         display: flex;
         align-items: center;
         gap: 0.45rem;
+        flex-wrap: wrap;
       }
 
       .card__path {
@@ -250,7 +246,6 @@
         color: var(--muted-dim);
       }
 
-      /* --- Footer --- */
       footer {
         position: relative;
         z-index: 1;
@@ -273,121 +268,69 @@
   </head>
   <body>
     <main>
-      <!-- Header -->
       <header class="header">
         <span class="header__eyebrow">British Antarctic Survey</span>
-        <h1>Environmental STAC</h1>
+        <h1>Documentation</h1>
         <p class="header__lede">
-          Catalogued environmental forecasts and geospatial data. Select a
-          service below to explore collections, query the API, or render
-          dynamic tiles.
+	  Documentation for the three components as part of the STAC catalogue
+	  deployment.
+        </p>
+        <p class="header__back">
+          <a href="/">Back to services</a>
         </p>
       </header>
 
       <hr class="divider" />
 
-      <!-- Service cards -->
-      <nav aria-label="Services">
+      <nav aria-label="Documentation sites">
         <ul class="services" style="list-style:none;">
 
           <li>
-            <a class="card" href="/dashboard/" id="link-dashboard">
+            <a class="card" href="/docs/orchestrator/" id="link-docs-orchestrator">
+              <span class="card__icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+              </span>
+              <span class="card__body">
+                <span class="card__title">
+                  Orchestrator
+                  <span class="card__path">/docs/orchestrator</span>
+                </span>
+                <span class="card__desc">
+                  How to run, deploy and operate the full stack.
+                </span>
+              </span>
+            </a>
+          </li>
+
+          <li>
+            <a class="card" href="/docs/dashboard/" id="link-docs-dashboard">
               <span class="card__icon" aria-hidden="true">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
               </span>
               <span class="card__body">
                 <span class="card__title">
-                  Forecast Dashboard
-                  <span class="card__path">/dashboard</span>
+                  Dashboard
+                  <span class="card__path">/docs/dashboard</span>
                 </span>
                 <span class="card__desc">
-                  Interactive map and collection browser. Visualise forecast
-                  COGs across lead times with dynamic styling controls.
+                  Visualise forecast outputs on a map.
                 </span>
               </span>
             </a>
           </li>
 
           <li>
-            <a class="card" href="/browser/" id="link-browser">
+            <a class="card" href="/docs/generator/" id="link-docs-generator">
               <span class="card__icon" aria-hidden="true">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
               </span>
               <span class="card__body">
                 <span class="card__title">
-                  STAC Browser
-                  <span class="card__path">/browser</span>
+                  Generator
+                  <span class="card__path">/docs/generator</span>
                 </span>
                 <span class="card__desc">
-                  Data catalog explorer for collections and items.
-                </span>
-              </span>
-            </a>
-          </li>
-
-          <li>
-            <a class="card" href="/api/api.html" id="link-api">
-              <span class="card__icon" aria-hidden="true">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              </span>
-              <span class="card__body">
-                <span class="card__title">
-                  STAC API
-                  <span class="card__path">/api</span>
-                </span>
-                <span class="card__desc">
-                  Machine-readable catalog root with spatial and temporal search.
-                </span>
-              </span>
-            </a>
-          </li>
-
-          <li>
-            <a class="card" href="/files/data/" id="link-files">
-              <span class="card__icon" aria-hidden="true">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-              </span>
-              <span class="card__body">
-                <span class="card__title">
-                  File Server
-                  <span class="card__path">/files</span>
-                </span>
-                <span class="card__desc">
-                  COGs and static forecast data served directly.
-                </span>
-              </span>
-            </a>
-          </li>
-
-          <li>
-            <a class="card" href="/tiles/" id="link-tiles">
-              <span class="card__icon" aria-hidden="true">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-              </span>
-              <span class="card__body">
-                <span class="card__title">
-                  Tiler
-                  <span class="card__path">/tiles</span>
-                </span>
-                <span class="card__desc">
-                  Dynamic COG tile rendering via TiTiler and cache.
-                </span>
-              </span>
-            </a>
-          </li>
-
-          <li>
-            <a class="card" href="/docs/" id="link-docs">
-              <span class="card__icon" aria-hidden="true">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-              </span>
-              <span class="card__body">
-                <span class="card__title">
-                  Documentation
-                  <span class="card__path">/docs</span>
-                </span>
-                <span class="card__desc">
-                  Documentation hub for orchestrator, dashboard, and generator.
+                  Convert forecast netCDF files for this workflow, and ingest into database.
                 </span>
               </span>
             </a>

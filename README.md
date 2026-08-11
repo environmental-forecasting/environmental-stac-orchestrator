@@ -9,12 +9,34 @@ This meta-repository coordinates deployment of a modular architecture designed t
 
 ## Documentation
 
-Project docs can be built with:
+Project docs can be previewed locally with:
 
 ```bash
 make docs-install
 make docs
 ```
+
+Then open http://127.0.0.1:8000.
+
+With the stack running (`make dev` / `staging` / `prod`), open `/docs/` on the
+same host as the landing portal. That page links to `/docs/orchestrator/`,
+`/docs/dashboard/`, and `/docs/generator/`. Submodule checkouts must be present
+so `Dockerfile.docs` can build all three sites.
+
+| Path | Site |
+| ---- | ---- |
+| `/docs/` | Documentation hub |
+| `/docs/orchestrator/` | Orchestrator |
+| `/docs/dashboard/` | Dashboard |
+| `/docs/generator/` | Generator |
+
+Public GitHub Pages builds use the Documentation workflow in each repository
+(Actions / Documentation, or push to `main` when docs change). Enable
+**Settings / Pages / Source = GitHub Actions** once per repo if needed:
+
+- https://environmental-forecasting.github.io/environmental-stac-orchestrator/
+- https://environmental-forecasting.github.io/environmental-stac-dashboard/
+- https://environmental-forecasting.github.io/environmental-stac-generator/
 
 Component docs live with their code:
 
@@ -203,6 +225,7 @@ Traefik `Host()` rules accept `DOMAIN_NAME`, `localhost`, `127.0.0.1`, and `HOST
 
 * **Development Mode** (`make dev`):
   * **Landing Portal:** http://localhost/
+  * **Documentation:** http://localhost/docs/ (hub; orchestrator `/docs/orchestrator/`, dashboard `/docs/dashboard/`, generator `/docs/generator/`)
   * **Dashboard UI:** http://localhost/dashboard/
   * **STAC Browser:** http://localhost/browser/
   * **STAC FastAPI:** http://localhost/api (Swagger UI at http://localhost/api/api.html)
@@ -214,6 +237,7 @@ Traefik `Host()` rules accept `DOMAIN_NAME`, `localhost`, `127.0.0.1`, and `HOST
 * **Staging / Production Mode** (`make staging` or `make prod`):
   Traefik terminates HTTPS for `DOMAIN_NAME` (configured in `.env.staging` or `.env.production`) and routes using identical path prefixes:
   * **Landing Portal:** `https://<domain_name>/`
+  * **Documentation:** `https://<domain_name>/docs/` (hub; also `/docs/orchestrator/`, `/docs/dashboard/`, `/docs/generator/`)
   * **Dashboard UI:** `https://<domain_name>/dashboard/`
   * **STAC Browser:** `https://<domain_name>/browser/`
   * **STAC FastAPI:** `https://<domain_name>/api`

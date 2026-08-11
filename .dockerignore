@@ -1,0 +1,15 @@
+# Keep docs image builds small; stac-browser Dockerfile clones its own sources.
+data/
+certs/
+letsencrypt/
+site/
+**/site/
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/bench/
+**/.git
+**/*.pyc
+.env
+.env.*
+!.env.template

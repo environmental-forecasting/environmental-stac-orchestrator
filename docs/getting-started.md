@@ -64,9 +64,15 @@ envstacgen ingest --env-file .env.development data/stac/catalog.json -o
 
 ## Preview these docs
 
+Locally (host uv, not Docker):
+
 ```bash
 make docs-install
 make docs
 ```
 
 Then open http://127.0.0.1:8000.
+
+With the Compose stack running, open `/docs/` on the same host as the landing
+portal. That hub page links to the orchestrator, dashboard, and generator doc
+sites. Submodule checkouts must be present so `Dockerfile.docs` can build them.

@@ -26,6 +26,11 @@ services:
       - "traefik.http.routers.landing.entrypoints=websecure"
       - "traefik.http.routers.landing.tls=true"
 
+  docs:
+    labels:
+      - "traefik.http.routers.docs.entrypoints=websecure"
+      - "traefik.http.routers.docs.tls=true"
+
   stac-fastapi:
     labels:
       - "traefik.http.routers.stac-fastapi.entrypoints=websecure"
