@@ -1,5 +1,5 @@
 [project]
-# site_url = "https://environmental-forecasting.github.io/environmental-stac-orchestrator/"
+site_url = "https://environmental-forecasting.github.io/environmental-stac-orchestrator/"
 site_name = "Environmental STAC Orchestrator"
 site_description = "Deploy and operate the BAS environmental STAC stack"
 site_author = "Bryn Noel Ubald"

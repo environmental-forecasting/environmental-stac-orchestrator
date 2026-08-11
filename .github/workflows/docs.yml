@@ -1,6 +1,14 @@
 name: Documentation
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "zensical.toml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/docs.yml"
 permissions:
   contents: read
   pages: write
