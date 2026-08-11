@@ -30,7 +30,7 @@ RUN sed -i 's|^#* *site_url = .*|site_url = "/docs/generator/"|' zensical.toml \
     && uv sync --only-group docs --no-install-project \
     && uv run --only-group docs zensical build --clean
 
-FROM nginx:alpine
+FROM nginx:1.31.3
 COPY config/docs/nginx.conf /etc/nginx/conf.d/default.conf
 COPY config/docs/index.html /usr/share/nginx/html/docs/index.html
 COPY --from=build-orchestrator /build/site /usr/share/nginx/html/docs/orchestrator

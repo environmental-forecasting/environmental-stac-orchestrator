@@ -5,7 +5,7 @@
 # nginx location from SB_pathPrefix.
 ARG STAC_BROWSER_VERSION=v5.0.0
 
-FROM node:lts-alpine AS build-step
+FROM node:26.7.0-alpine3.24 AS build-step
 ARG STAC_BROWSER_VERSION
 ARG DYNAMIC_CONFIG=true
 ARG historyMode=history
@@ -24,7 +24,7 @@ RUN npm install
 RUN [ "${DYNAMIC_CONFIG}" = "true" ] && sed -i 's/<!--RC//;s/RC-->//' index.html
 RUN npm run build
 
-FROM nginxinc/nginx-unprivileged:1-alpine
+FROM nginxinc/nginx-unprivileged:1.31.3-alpine
 ARG pathPrefix=/browser/
 
 USER root
