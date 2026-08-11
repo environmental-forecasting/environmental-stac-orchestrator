@@ -172,9 +172,11 @@ services:
     networks:
       - stac-network
 
-  # TiTiler for dynamic tiling (internal; browsers hit tiler-cache).
+  # titiler-pgstac for Item tiles (internal; browsers hit tiler-cache).
+  # Pin must match EXPECTED_TITILER_PGSTAC in config/titiler_pgstac_app.py.
+  # That wrap patches ItemIdParams and img_profiles; bump both together.
   titiler:
-    image: ghcr.io/developmentseed/titiler:latest
+    image: ghcr.io/stac-utils/titiler-pgstac:3.0.0
     environment:
       CPL_TMPDIR: /tmp
       GDAL_CACHEMAX: 75%
@@ -191,18 +193,31 @@ services:
       GDAL_WARP_MEMLIMIT: "256"
       # Increased dataset handle pool to prevent reopening COGs for concurrent tiles
       GDAL_MAX_DATASET_POOL_SIZE: "512"
-      # Bitnami/gunicorn worker count (tile renders are CPU-bound).
       WEB_CONCURRENCY: ${TILER_WEB_CONCURRENCY:-4}
       TILEMATRIXSET_DIRECTORY: /custom_tms
-      ROOT_PATH: /tiles
+      TITILER_PGSTAC_API_ROOT_PATH: /tiles
+      PYTHONPATH: /config
+      MODULE_NAME: titiler_pgstac_app
+      PGHOST: database
+      PGPORT: ${DATABASE_PORT:-5432}
+      PGUSER: ${DATABASE_USER}
+      PGPASSWORD: ${DATABASE_PASSWORD}
+      PGDATABASE: ${DATABASE_DBNAME}
+      DB_MIN_CONN_SIZE: "1"
+      DB_MAX_CONN_SIZE: "1"
     volumes:
       - ./data:/data:ro
       - ./custom_tms:/custom_tms:ro
+      - ./config/titiler_pgstac_app.py:/config/titiler_pgstac_app.py:ro
+    depends_on:
+      - database
+      - pgstac
     networks:
       - stac-network
 
   # Shared HTTP cache + long Cache-Control in front of TiTiler.
   # Cache sizing/TTL: TILER_CACHE_* in the env file (template -> envsubst).
+  # Nginx re-resolves the `titiler` hostname via Docker DNS (see template).
   tiler-cache:
     image: nginx:1.31.3
     depends_on:
@@ -236,10 +251,8 @@ services:
       - PYTHONPATH=/app/src
       # Browser-facing tile URLs (Traefik /tiles -> tiler-cache).
       - TILER_URL=${TILER_URL}
-      # Server-side TiTiler / file-server calls run inside the container - Docker DNS.
+      # Server-side TiTiler calls run inside the container (Docker DNS).
       - TILER_INTERNAL_URL=http://titiler
-      - FILE_SERVER_URL=${FILE_SERVER_URL}
-      - FILE_SERVER_INTERNAL_URL=http://file-server
       # Server-side STAC client (Docker DNS). Not taken from the env file.
       - STAC_FASTAPI_URL=http://stac-fastapi:8000
       - DASHBOARD_PORT=80
@@ -248,7 +261,7 @@ services:
       # Dash callbacks wait on STAC; extra workers serve concurrent users.
       # They share the STAC disk cache.
       - DASHBOARD_WEB_CONCURRENCY=${DASHBOARD_WEB_CONCURRENCY:-4}
-      # Seconds a cached Collection, init list, or Item stays valid.
+      # Seconds a cached Collection or init list stays valid.
       # 0 keeps rows until the store evicts them.
       - STAC_DISK_CACHE_TTL=${STAC_DISK_CACHE_TTL:-86400}
     labels:

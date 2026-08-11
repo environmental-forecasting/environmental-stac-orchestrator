@@ -7,6 +7,8 @@
 # (see TILER_CACHE_* in .env.template) - do not hardcode them here.
 #
 # Upstream hostname ``titiler`` is the Compose service name (Docker DNS SSOT).
+# ``resolve`` re-queries 127.0.0.11 so a titiler recreate does not leave a
+# stale IP and 502 until this proxy is also recreated.
 
 proxy_cache_path /var/cache/nginx/tiles
     levels=1:2
@@ -16,7 +18,9 @@ proxy_cache_path /var/cache/nginx/tiles
     use_temp_path=off;
 
 upstream titiler_upstream {
-    server titiler:80;
+    zone titiler 64k;
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    server titiler:80 resolve;
     keepalive 32;
 }
 
@@ -31,7 +35,7 @@ server {
     open_file_cache_min_uses 1;
     open_file_cache_errors on;
 
-    # Large tile query strings (file:///data/... + style params).
+    # Large tile query strings (asset keys + style params).
     client_max_body_size 0;
 
     location / {
@@ -44,8 +48,8 @@ server {
         proxy_pass http://titiler_upstream;
     }
 
-    # Dynamic COG XYZ tiles - cache rendered bytes; tell browsers to keep them.
-    location ~* /cog/tiles/ {
+    # titiler-pgstac Item tiles.
+    location ~* /collections/.+/items/.+/tiles/ {
         proxy_http_version 1.1;
         proxy_set_header Connection "";
         proxy_set_header Host $host;
