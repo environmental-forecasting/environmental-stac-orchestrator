@@ -244,6 +244,9 @@ services:
       - DASHBOARD_PORT=80
       - DASHBOARD_URL_BASE_PATHNAME=/dashboard/
       - DASHBOARD_DEBUG=${DASHBOARD_DEBUG:-false}
+      # Dash callbacks wait on STAC; extra workers serve concurrent users.
+      # They share the STAC disk cache.
+      - DASHBOARD_WEB_CONCURRENCY=${DASHBOARD_WEB_CONCURRENCY:-4}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.dashboard.rule=(Host(`${DOMAIN_NAME}`) || Host(`localhost`) || Host(`127.0.0.1`) || Host(`${HOST_IP}`)) && PathPrefix(`/dashboard`)"
