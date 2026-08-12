@@ -10,6 +10,7 @@ services:
       - "--api.insecure=false"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.filename=/etc/traefik/certs.yml"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--entrypoints.websecure.http3"
@@ -28,6 +29,8 @@ services:
       - "443:443/udp"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./config/traefik/certs.yml:/etc/traefik/certs.yml:ro"
+      - "./certs:/certs:ro"
       - "./letsencrypt:/letsencrypt"
 
   landing:

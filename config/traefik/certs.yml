@@ -1,4 +1,5 @@
-# Self-signed / file-mounted certs for local `make dev` (see make certs).
+# Local file certs. Used by `make dev`, and as the default store when ACME
+# cannot reach Let's Encrypt (internal staging/prod hosts).
 tls:
   stores:
     default:
