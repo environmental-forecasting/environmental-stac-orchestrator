@@ -1,0 +1,24 @@
+# rsync exclude-from (not gitignore syntax). First match wins.
+# /data is only the orchestrator catalog tree. Do not use a bare "data"
+# pattern: that also drops src/map/data/ne_outline_index.json.
++ .env.template
+- .env
+- .env.*
+- .git
+- .venv
+- **/.venv
+- **/.git
+- /data
+- tmp
+- certs
+- letsencrypt
+- site
+- **/site
+- __pycache__
+- **/*.pyc
+- .pytest_cache
+- .mypy_cache
+- .ruff_cache
+- .cache
+- *.egg-info
+- compose.data-symlinks.yaml

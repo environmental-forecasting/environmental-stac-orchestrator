@@ -331,86 +331,111 @@ CANARI example: (At altitude, so, not surface level variable, needs coastline ov
 
 ## Ansible Deployment (VMware / Rocky 9)
 
-This will be streamlined and integrated into the internal BAS Ansible repo in the future, but, for testing, you can deploy to the internal VMware dev cluster by following these steps for a Rocky 9 VM.
+Playbooks under `playbooks/` install Docker on a Rocky 9 guest and bring up
+**one** Compose environment. They rsync **this local checkout** (orchestrator,
+dashboard, and generator as they sit on disk). GitHub is not cloned.
 
-Playbooks under `playbooks/` bootstrap Docker on a Rocky 9 guest and bring up
-**one** Compose environment: `dev`, `staging`, or `prod` (mirrors `make
-dev|staging|prod`).
+Run the commands from the orchestrator repo root. `--ask-become-pass` prompts
+for sudo on the VM.
 
-> [!WARNING]
-> The playbooks may still lag the Make/Compose workflow. Prefer `make
-> prod` (or staging/dev) on the host after configuring the matching
-> `.env.*` file. Treat Ansible as a starting point until it is fully
-> aligned.
+### 1. Collections (once, on your laptop)
 
-> [!NOTE]
-> Prefer iterating on the host with `make <env>` when you already have Docker
-> and a checkout. Use Ansible for first-time VMware bring-up or repeatable
-> remote deploys. Install collections with
-> `ansible-galaxy collection install -r requirements.yml` (needs
-> `community.docker`).
+```bash
+ansible-galaxy collection install -r requirements.yml
+```
 
-### 1. Inventory
+### 2. Inventory (SSH only)
 
-Edit [`inventory.yaml`](inventory.yaml): set `ansible_host` and `ansible_user`
-(SSH access to the internal network / VM).
+Edit [`inventory.yaml`](inventory.yaml): set `ansible_host` and `ansible_user`.
+Do not put the database password or domain there.
 
-### 2. Optional: Python 3.12 only
+### 3. Env file (stack settings)
+
+Ansible reads the matching **local** file and copies it to the VM:
+
+| `deploy_env` | File |
+| --- | --- |
+| `dev` | `.env.development` |
+| `staging` | `.env.staging` |
+| `prod` | `.env.production` |
+
+```bash
+cp .env.template .env.staging   # or .env.development / .env.production
+```
+
+Set at least:
+
+* `DATABASE_PASSWORD` (never the template placeholder)
+* For staging/prod: `DOMAIN_NAME` (not `example.bas.ac.uk`) and a real
+  `ACME_EMAIL` (not `admin@example.bas.ac.uk`)
+* `FILE_SERVER_URL` expanded to `https://<DOMAIN_NAME>/files` (do not leave
+  a literal `${DOMAIN_NAME}`; ingest writes this into the catalogue). Ansible
+  rewrites it on deploy; set it in the file if you also ingest locally.
+* Optional: `HOST_IP` (VM hostname or IP). `127.0.0.1` / `localhost` are
+  ignored and `ansible_host` is used instead.
+* Optional: `ACME_CASERVER` if you need a non-default ACME directory
+
+These files are gitignored. Extra-vars (`-e database_password=...`,
+`-e domain_name=...`, `-e public_host=...`) override the file for a one-off.
+
+### 4. Optional: Python 3.12 only
+
+`deploy.yaml` already imports this. Use it alone if you only want the interpreter:
 
 ```bash
 ansible-playbook --ask-become-pass -i inventory.yaml playbooks/python_install.yaml
 ```
 
-where `--ask-become-pass` will prompt for the password needed for `sudo` (root) access.
+### 5. Deploy
 
-(`deploy.yaml` also installs Python 3.12 if missing.)
+The remote tree defaults to `/opt/environmental-stac-orchestrator`. Override the
+source with `-e local_src=/path` only if you are not running from this repo.
 
-### 3. Deploy
-
-Checkout defaults to `/opt/environmental-stac-orchestrator`. Always pass a real
-`database_password` (never the template placeholder).
-
-**Development** (HTTP via Traefik path prefixes; `compose.override.yaml` only
-adds dashboard source hot-reload):
+**Development** (`make dev`: self-signed HTTPS, dashboard hot-reload):
 
 ```bash
 ansible-playbook --ask-become-pass -i inventory.yaml playbooks/deploy.yaml \
-  -e deploy_env=dev \
-  -e database_password='...' \
-  -e public_host=YOUR_VM_IP_OR_DNS
+  -e deploy_env=dev
 ```
 
-**Staging / production** (Traefik HTTPS via `compose.prod.yaml`):
+Open `https://<ansible_host or HOST_IP>/` (browser warning is expected).
+Pass `-e public_host=...` if the name in inventory is not what browsers use.
+
+**Staging** (`make staging`: Let's Encrypt staging CA, local certs if ACME cannot
+reach the host):
 
 ```bash
 ansible-playbook --ask-become-pass -i inventory.yaml playbooks/deploy.yaml \
-  -e deploy_env=staging \
-  -e database_password='...' \
-  -e domain_name=forecast.example.bas.ac.uk \
-  -e acme_email=admin@example.bas.ac.uk
+  -e deploy_env=staging
 ```
 
-where `--ask-become-pass` prompts for `sudo` privileges during host setup.
+**Production** (`make prod`: Let's Encrypt live CA, same local-cert fallback):
 
-Use `-e deploy_env=prod` for production. Staging defaults `ACME_CASERVER` to
-Let's Encrypt's staging CA (override with `-e acme_caserver=...`). Ensure DNS for
-`domain_name` points at the VM and ports 80/443 are reachable for ACME.
+```bash
+ansible-playbook --ask-become-pass -i inventory.yaml playbooks/deploy.yaml \
+  -e deploy_env=prod
+```
 
-Useful extras: `dest_dir`, `repo_version`, `icenet_data_src`,
-`install_cron_ingest=true|false`.
+Each run copies the local env file (or seeds from the template if that file is
+missing), then `make <env>` (certs, Let's Encrypt store, compose up). It enables
+`stac-<env>.service` so the stack returns after a crash or VM reboot. Re-run
+the same command to push local changes. Daily ingest cron is on for staging
+and prod (off for dev).
 
-Data symlinks under `./data` are written to `compose.data-symlinks.yaml` (not
-`compose.override.yaml`) so Ansible can mount resolved paths without clobbering
-the dev hot-reload bind-mount.
+Useful extras: `dest_dir`, `local_src`, `icenet_data_src`,
+`install_cron_ingest=true|false`, `relabel_icenet_data=false` (do not enable
+the SELinux NFS boolean for containers).
 
-### 4. Undeploy
+### 6. Undeploy
 
-Stops the selected Compose project only (does not remove Docker by default):
+Stops that environment only (Docker stays installed):
 
 ```bash
 ansible-playbook --ask-become-pass -i inventory.yaml playbooks/undeploy.yaml \
   -e deploy_env=staging
 ```
+
+Use `deploy_env=dev` or `deploy_env=prod` to match what you deployed.
 
 Optional: `-e remove_volumes=true` (drops that env's Postgres volume),
 `-e remove_repo=true`, `-e purge_docker=true`.

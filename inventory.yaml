@@ -1,7 +1,8 @@
 # Inventory for Ansible deploys of environmental-stac-orchestrator.
 #
-# Update ansible_host / ansible_user for your VMware VM. Pass secrets and
-# environment choice via -e on the command line (see README).
+# SSH only. Stack settings (password, domain, ACME email, HOST_IP) come from
+# the matching local .env.development / .env.staging / .env.production.
+# See README.
 
 myhosts:
   hosts:
@@ -12,7 +13,5 @@ myhosts:
       # Optional host defaults (override with ansible-playbook -e ...).
       # deploy_env: staging
       # dest_dir: /opt/environmental-stac-orchestrator
-      # public_host: YOUR_SERVER_OR_IP   # used for dev browser URLs
-      # domain_name: forecast.example.bas.ac.uk
-      # acme_email: admin@example.bas.ac.uk
+      # local_src: /path/to/environmental-stac-orchestrator
       # icenet_data_src: /path/to/source/catalog/data
