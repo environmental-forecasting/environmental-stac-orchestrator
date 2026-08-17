@@ -127,7 +127,7 @@ services:
         exec uvicorn stac_fastapi.pgstac.app:app --host 0.0.0.0 --port 8000 --proxy-headers $${ROOT_PATH_ARG}
       '
     volumes:
-      - ./data:/data:ro
+      - ./data:/data:ro,rslave
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.stac-fastapi.rule=(Host(`${DOMAIN_NAME}`) || Host(`localhost`) || Host(`127.0.0.1`) || Host(`${HOST_IP}`)) && PathPrefix(`/api`)"
@@ -143,7 +143,7 @@ services:
     image: nginx:1.31.3
     restart: unless-stopped
     volumes:
-      - ./data:/usr/share/nginx/html/data:ro
+      - ./data:/usr/share/nginx/html/data:ro,rslave
       - ./config/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     labels:
       - "traefik.enable=true"
@@ -215,7 +215,7 @@ services:
       DB_MIN_CONN_SIZE: "1"
       DB_MAX_CONN_SIZE: "1"
     volumes:
-      - ./data:/data:ro
+      - ./data:/data:ro,rslave
       - ./custom_tms:/custom_tms:ro
       - ./config/titiler_pgstac_app.py:/config/titiler_pgstac_app.py:ro
     depends_on:
