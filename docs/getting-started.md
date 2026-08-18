@@ -19,14 +19,14 @@ cd environmental-stac-orchestrator
 ## Configure environment
 
 ```bash
-cp .env.template .env.development
+cp .env.template .env.dev
 ```
 
-Edit `.env.development` and set at least a real `DATABASE_PASSWORD`.
+Edit `.env.dev` and set at least a real `DATABASE_PASSWORD`.
 
 For local development that is usually enough. The stack is fronted by **Traefik**, a reverse proxy that routes browser paths such as `/dashboard/` and `/api` to the right container (on localhost for `make dev`).
 
-For staging or production, copy the template to `.env.staging` or `.env.production` instead and set:
+For staging or production, copy the template to `.env.staging` or `.env.prod` instead and set:
 
 | Variable | Meaning |
 | -------- | ------- |
@@ -57,7 +57,7 @@ pip install -e .
 # Assuming following are run from the main Orchestrator repo path
 # Optional: set the STAC collection name (default: default)
 envstacgen preprocess <path_to_netcdf_predictions> -n <collection_name>
-envstacgen ingest --env-file .env.development data/stac/catalog.json -o
+envstacgen ingest --env-file .env.dev data/stac/catalog.json -o
 ```
 
 `-n` / `--name` names the collection under the root catalogue (outputs land in `data/cogs/<collection_name>/` and `data/stac/<collection_name>/`). Full CLI detail: [environmental-stac-generator](https://github.com/environmental-forecasting/environmental-stac-generator).

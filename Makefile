@@ -8,13 +8,13 @@ DATA_LINKS := $(wildcard compose.data-mounts.yaml)
 COMPOSE_FILES_dev     := -f compose.yaml -f compose.override.yaml $(if $(DATA_LINKS),-f compose.data-mounts.yaml)
 COMPOSE_FILES_staging := -f compose.yaml -f compose.prod.yaml $(if $(DATA_LINKS),-f compose.data-mounts.yaml)
 COMPOSE_FILES_prod    := -f compose.yaml -f compose.prod.yaml $(if $(DATA_LINKS),-f compose.data-mounts.yaml)
-COMPOSE_dev     := docker compose --project-name stac-dev $(COMPOSE_FILES_dev) --env-file .env.development
+COMPOSE_dev     := docker compose --project-name stac-dev $(COMPOSE_FILES_dev) --env-file .env.dev
 COMPOSE_staging := docker compose --project-name stac-staging $(COMPOSE_FILES_staging) --env-file .env.staging
-COMPOSE_prod    := docker compose --project-name stac-prod $(COMPOSE_FILES_prod) --env-file .env.production
+COMPOSE_prod    := docker compose --project-name stac-prod $(COMPOSE_FILES_prod) --env-file .env.prod
 
-ENV_FILE_dev     := .env.development
+ENV_FILE_dev     := .env.dev
 ENV_FILE_staging := .env.staging
-ENV_FILE_prod    := .env.production
+ENV_FILE_prod    := .env.prod
 
 ENV := $(firstword $(filter dev staging prod,$(MAKECMDGOALS)))
 

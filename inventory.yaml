@@ -1,7 +1,7 @@
 # Inventory for Ansible deploys of environmental-stac-orchestrator.
 #
 # SSH only. Stack settings (password, domain, ACME email, HOST_IP) come from
-# the matching local .env.development / .env.staging / .env.production.
+# the matching local .env.dev / .env.staging / .env.prod.
 # See README.
 
 myhosts:

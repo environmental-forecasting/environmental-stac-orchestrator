@@ -98,13 +98,13 @@ Each environment also uses its own Compose project name and Postgres volume (`PO
 First, copy the template to your desired environment:
 
 ```bash
-cp .env.template .env.development
+cp .env.template .env.dev
 ```
 
-Open `.env.development` (or your chosen environment file) and update the values as necessary, such as setting a secure `DATABASE_PASSWORD`. Set `COMPOSE_PROJECT_NAME` / `POSTGRES_VOLUME_NAME` if you customise them (defaults differ per env file).
+Open `.env.dev` (or your chosen environment file) and update the values as necessary, such as setting a secure `DATABASE_PASSWORD`. Set `COMPOSE_PROJECT_NAME` / `POSTGRES_VOLUME_NAME` if you customise them (defaults differ per env file).
 
 > [!NOTE]  
-> If deploying to staging or production, copy `.env.template` to `.env.staging` or `.env.production` instead, and ensure you configure `DOMAIN_NAME`, `ACME_EMAIL`, and (for staging) `ACME_CASERVER` for Traefik HTTPS.
+> If deploying to staging or production, copy `.env.template` to `.env.staging` or `.env.prod` instead, and ensure you configure `DOMAIN_NAME`, `ACME_EMAIL`, and (for staging) `ACME_CASERVER` for Traefik HTTPS.
 
 > [!IMPORTANT]  
 > The database password is applied when the PostgreSQL volume is first created. Changing `DATABASE_PASSWORD` later will not update an existing volume; use standard PostgreSQL tooling, or `make clear-db <env>` and recreate the stack. Removing a volume leaves any previous volume names on disk until you delete them manually (`docker volume ls`).
@@ -125,7 +125,7 @@ make dev attach
 # For staging testing (HTTPS via Traefik; uses compose.prod.yaml and .env.staging)
 make staging
 
-# For production (HTTPS via Traefik; uses compose.prod.yaml and .env.production)
+# For production (HTTPS via Traefik; uses compose.prod.yaml and .env.prod)
 make prod
 ```
 
@@ -134,7 +134,7 @@ This will:
 * Build all service images (environmental-stac-dashboard, pgstac, stac-fastapi, file-server, stac-browser).
 * Launch the orchestrator stack using Docker Compose with the appropriate environment configuration.
 
-`make dev` loads `.env.development` and includes `compose.override.yaml` for developer live hot-reloading. `make staging` and `make prod` load the matching env file and layer `compose.prod.yaml` (Traefik HTTPS / ACME) on top of `compose.yaml`. All three detach by default; add `attach` (e.g. `make dev attach`) to run in the foreground and follow logs.
+`make dev` loads `.env.dev` and includes `compose.override.yaml` for developer live hot-reloading. `make staging` and `make prod` load the matching env file and layer `compose.prod.yaml` (Traefik HTTPS / ACME) on top of `compose.yaml`. All three detach by default; add `attach` (e.g. `make dev attach`) to run in the foreground and follow logs.
 
 #### Stop containers
 
@@ -211,7 +211,7 @@ where, `valid_time` is the datetime corresponding to the forecast leadtime. (The
 To ingest the generated static STAC JSON catalog into the pgSTAC (postgresql) database, run:
 
 ```bash
-envstacgen ingest --env-file .env.development data/stac/catalog.json -o
+envstacgen ingest --env-file .env.dev data/stac/catalog.json -o
 ```
 
 where, the `-o` will overwrite any existing matching entries (by default, will skip any matching).
@@ -235,7 +235,7 @@ Traefik `Host()` rules accept `DOMAIN_NAME`, `localhost`, `127.0.0.1`, and `HOST
   * **PostgreSQL Database:** localhost:5432 (direct port for CLI ingestion)
 
 * **Staging / Production Mode** (`make staging` or `make prod`):
-  Traefik terminates HTTPS for `DOMAIN_NAME` (configured in `.env.staging` or `.env.production`) and routes using identical path prefixes:
+  Traefik terminates HTTPS for `DOMAIN_NAME` (configured in `.env.staging` or `.env.prod`) and routes using identical path prefixes:
   * **Landing Portal:** `https://<domain_name>/`
   * **Documentation:** `https://<domain_name>/docs/` (hub; also `/docs/orchestrator/`, `/docs/dashboard/`, `/docs/generator/`)
   * **Dashboard UI:** `https://<domain_name>/dashboard/`
@@ -355,12 +355,12 @@ Ansible reads the matching **local** file and copies it to the VM:
 
 | `deploy_env` | File |
 | --- | --- |
-| `dev` | `.env.development` |
+| `dev` | `.env.dev` |
 | `staging` | `.env.staging` |
-| `prod` | `.env.production` |
+| `prod` | `.env.prod` |
 
 ```bash
-cp .env.template .env.staging   # or .env.development / .env.production
+cp .env.template .env.staging   # or .env.dev / .env.prod
 ```
 
 Set at least:
@@ -422,7 +422,7 @@ missing), then `make <env>` (certs, Let's Encrypt store, compose up). It enables
 the same command to push local changes. Daily ingest cron is on for staging
 and prod (off for dev).
 
-Useful extras: `dest_dir`, `local_src`, `icenet_data_src`,
+Useful extras: `dest_dir`, `local_src`.
 `install_cron_ingest=true|false`, `relabel_icenet_data=false` (do not enable
 the SELinux NFS boolean for containers).
 

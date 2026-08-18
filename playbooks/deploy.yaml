@@ -8,7 +8,7 @@
 #     -e deploy_env=staging
 #
 # Stack settings come from the matching local env file
-# (.env.development / .env.staging / .env.production). Inventory is SSH only.
+# (.env.dev / .env.staging / .env.prod). Inventory is SSH only.
 # Extra-vars override the file when you need a one-off.
 #
 # deploy_env: dev | staging | prod
@@ -45,7 +45,7 @@
     - name: Resolve paths and env file name
       ansible.builtin.set_fact:
         ssh_deploy_user: "{{ ansible_user | default(ansible_user_id) }}"
-        env_file_name: "{{ {'dev': '.env.development', 'staging': '.env.staging', 'prod': '.env.production'}[deploy_env] }}"
+        env_file_name: "{{ {'dev': '.env.dev', 'staging': '.env.staging', 'prod': '.env.prod'}[deploy_env] }}"
         compose_project_name: "stac-{{ deploy_env }}"
         postgres_volume_name: "environmental_pgstac_{{ deploy_env }}"
         cron_ingest_enabled: "{{ install_cron_ingest | default(deploy_env != 'dev') }}"
