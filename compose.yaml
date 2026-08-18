@@ -232,9 +232,9 @@ services:
       - titiler
     environment:
       TILER_CACHE_MAX_SIZE: ${TILER_CACHE_MAX_SIZE:-5g}
-      TILER_CACHE_INACTIVE: ${TILER_CACHE_INACTIVE:-7d}
+      TILER_CACHE_INACTIVE: ${TILER_CACHE_INACTIVE:-1d}
       TILER_CACHE_KEYS_ZONE_SIZE: ${TILER_CACHE_KEYS_ZONE_SIZE:-64m}
-      TILER_CACHE_VALID: ${TILER_CACHE_VALID:-7d}
+      TILER_CACHE_VALID: ${TILER_CACHE_VALID:-1d}
     volumes:
       - ./config/tiler-nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
       - tiler_proxy_cache:/var/cache/nginx/tiles

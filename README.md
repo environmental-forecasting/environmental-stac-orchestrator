@@ -323,7 +323,7 @@ This is expected, and part of `pypgstac migrate`'s approach when initialising an
 
 2. Map tiles in the dashboard are showing old or blank data after regenerating COGs:
 
-The `tiler-cache` service (Nginx reverse proxy) caches successful tile responses on disk for 7 days (`Cache-Control: immutable`). If you reprocessed COGs or updated STAC metadata for existing items, purge the proxy cache:
+The `tiler-cache` service (Nginx reverse proxy) caches successful tile responses on disk for 1 day (`Cache-Control: max-age=86400, immutable`). If you reprocessed COGs or updated STAC metadata for existing items within that window, purge the proxy cache:
 
 ```bash
 make clear-tiler-cache dev   # or staging / prod
