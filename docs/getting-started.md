@@ -62,6 +62,12 @@ envstacgen ingest --env-file .env.dev data/stac/catalog.json -o
 
 `-n` / `--name` names the collection under the root catalogue (outputs land in `data/cogs/<collection_name>/` and `data/stac/<collection_name>/`). Full CLI detail: [environmental-stac-generator](https://github.com/environmental-forecasting/environmental-stac-generator).
 
+> [!TIP]
+> If you are re-generating or replacing existing forecast COGs, purge the Nginx tile proxy cache so the dashboard doesn't serve cached tile responses:
+> ```bash
+> make clear-tiler-cache dev
+> ```
+
 ## Preview these docs
 
 Locally (host uv, not Docker):

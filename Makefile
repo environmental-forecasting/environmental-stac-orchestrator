@@ -108,6 +108,12 @@ clear-all:
 	@$(MAKE) clear-data
 	@$(MAKE) clear-db $(ENV)
 
+# Clear the Nginx tile proxy cache for one environment, e.g. make clear-tiler-cache dev
+# Usage: make clear-tiler-cache dev|staging|prod
+clear-tiler-cache:
+	$(if $(ENV),,$(error Usage: make clear-tiler-cache dev|staging|prod))
+	$(COMPOSE_$(ENV)) exec tiler-cache sh -c 'rm -rf /var/cache/nginx/tiles/*'
+
 # Documentation
 docs-install:
 	uv sync --group docs --no-install-project

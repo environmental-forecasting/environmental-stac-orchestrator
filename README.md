@@ -283,6 +283,14 @@ To clear both `./data` and that environment’s database volume:
 make clear-all dev
 ```
 
+To purge the Nginx tile proxy cache for an environment (e.g. after regenerating COGs or fixing metadata):
+
+```bash
+make clear-tiler-cache dev
+make clear-tiler-cache staging
+make clear-tiler-cache prod
+```
+
 #### Leadtime scrub benchmark
 
 With the dashboard stack running (`make dev`), measure leadtime scrub latency from the host (Playwright drives Chromium against the live UI):
@@ -312,6 +320,16 @@ pgstac-1 exited with code 0
 ```
 
 This is expected, and part of `pypgstac migrate`'s approach when initialising an empty database.
+
+2. Map tiles in the dashboard are showing old or blank data after regenerating COGs:
+
+The `tiler-cache` service (Nginx reverse proxy) caches successful tile responses on disk for 7 days (`Cache-Control: immutable`). If you reprocessed COGs or updated STAC metadata for existing items, purge the proxy cache:
+
+```bash
+make clear-tiler-cache dev   # or staging / prod
+```
+
+Also perform a hard refresh in your browser (`Ctrl + Shift + R` or `Cmd + Shift + R`) to bypass browser-level caching.
 
 ### Examples
 
