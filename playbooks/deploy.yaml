@@ -16,7 +16,7 @@
 #   staging|prod -> compose.yaml + compose.prod.yaml (Traefik ACME HTTPS)
 #
 # Optional extra-vars:
-#   dest_dir, local_src, public_host, icenet_data_src,
+#   dest_dir, local_src, public_host,
 #   database_password, domain_name, acme_email, acme_caserver,
 #   install_cron_ingest (default: true for staging|prod, false for dev),
 #   relabel_icenet_data (default: true; allow containers to read NFS IceNet data)
@@ -34,7 +34,6 @@
     dest_dir: /opt/environmental-stac-orchestrator
     local_src: "{{ playbook_dir }}/.."
     ansible_python_interpreter: /usr/bin/python3.12
-    icenet_data_src: /data/twins/pub/sic/icenet/stac-catalog/data
 
   pre_tasks:
     - name: Validate deploy_env
@@ -269,98 +268,36 @@
       loop: "{{ env_overrides | dict2items }}"
       no_log: true
 
-    - name: Check IceNet data source directory
-      ansible.builtin.stat:
-        path: "{{ icenet_data_src }}"
-      register: icenet_data_dir
+    - name: Generate Docker Compose data mounts
+      ansible.builtin.copy:
+        dest: "{{ dest_dir }}/compose.data-mounts.yaml"
+        content: |
+          volumes:
+            icenet_data:
+              driver: local
+              driver_opts:
+                type: nfs
+                o: "addr=${ICENET_NFS_ADDR:-bsfiles3},ro,nolock,hard,tcp"
+                device: ":${ICENET_NFS_PATH:-/san/twinslv/data/pub/sic/icenet/stac-catalog/data}"
 
-    - name: Warn when IceNet data source is missing
-      ansible.builtin.fail:
-        msg: >-
-          WARNING: IceNet data source {{ icenet_data_src }} does not exist
-          or is not a directory. Could not bind-mount catalog files under
-          {{ dest_dir }}/data. The stack will start with an empty catalog.
-          Re-run with -e icenet_data_src=/path/to/catalog/data
-      when: not (icenet_data_dir.stat.exists and icenet_data_dir.stat.isdir)
-      ignore_errors: true
+          services:
+            stac-fastapi:
+              volumes:
+                - icenet_data:/data:ro
+            file-server:
+              volumes:
+                - icenet_data:/usr/share/nginx/html/data:ro
+            titiler:
+              volumes:
+                - icenet_data:/data:ro
 
-    - name: Bind-mount IceNet catalog data into ./data
-      when: icenet_data_dir.stat.exists and icenet_data_dir.stat.isdir
-      block:
-        - name: Ensure data directory exists
-          ansible.builtin.file:
-            path: "{{ dest_dir }}/data"
-            state: directory
-            owner: "{{ ssh_deploy_user }}"
-            group: "{{ ssh_deploy_user }}"
-            mode: "0755"
-
-        - name: List IceNet data entries
-          ansible.builtin.find:
-            paths: "{{ icenet_data_src }}"
-            file_type: any
-            recurse: false
-          register: icenet_items
-
-        - name: Warn when IceNet data source is empty
-          ansible.builtin.fail:
-            msg: >-
-              WARNING: IceNet data source {{ icenet_data_src }} exists but
-              has no entries. Could not bind-mount catalog files under
-              {{ dest_dir }}/data.
-          when: icenet_items.files | length == 0
-          ignore_errors: true
-
-        - name: Stat existing data entries
-          ansible.builtin.stat:
-            path: "{{ dest_dir }}/data/{{ item.path | basename }}"
-          loop: "{{ icenet_items.files }}"
-          loop_control:
-            label: "{{ item.path | basename }}"
-          register: data_entry_stats
-
-        - name: Remove leftover data symlinks
-          ansible.builtin.file:
-            path: "{{ dest_dir }}/data/{{ item.item.path | basename }}"
-            state: absent
-          loop: "{{ data_entry_stats.results }}"
-          loop_control:
-            label: "{{ item.item.path | basename }}"
-          when: item.stat.islnk | default(false)
-
-        - name: Create IceNet directory mountpoints
-          ansible.builtin.file:
-            path: "{{ dest_dir }}/data/{{ item.path | basename }}"
-            state: directory
-          loop: "{{ icenet_items.files }}"
-          loop_control:
-            label: "{{ item.path | basename }}"
-          when: item.isdir
-
-        - name: Create IceNet file mountpoints
-          ansible.builtin.command:
-            cmd: touch "{{ dest_dir }}/data/{{ item.path | basename }}"
-            creates: "{{ dest_dir }}/data/{{ item.path | basename }}"
-          loop: "{{ icenet_items.files }}"
-          loop_control:
-            label: "{{ item.path | basename }}"
-          when: not item.isdir
-
-        - name: Bind-mount IceNet entries
-          ansible.posix.mount:
-            src: "{{ item.path }}"
-            path: "{{ dest_dir }}/data/{{ item.path | basename }}"
-            fstype: none
-            opts: bind,ro
-            state: mounted
-          loop: "{{ icenet_items.files }}"
-          loop_control:
-            label: "{{ item.path | basename }}"
-
-    - name: Drop nested compose.data-symlinks.yaml
+    - name: Drop old data mounts/symlinks overrides
       ansible.builtin.file:
-        path: "{{ dest_dir }}/compose.data-symlinks.yaml"
+        path: "{{ dest_dir }}/{{ item }}"
         state: absent
+      loop:
+        - compose.data-symlinks.yaml
+      when: item != ""
 
     - name: Ensure setuptools can build the generator
       ansible.builtin.command:
@@ -426,8 +363,6 @@
       when:
         - (selinux_mode.stdout | default('')) == 'Enforcing'
         - relabel_icenet_data | default(true) | bool
-        - icenet_data_dir.stat.exists | default(false)
-        - icenet_data_dir.stat.isdir | default(false)
 
     - name: Bring up {{ deploy_env }} stack
       ansible.builtin.command:
@@ -487,9 +422,4 @@
           via make {{ deploy_env }} and {{ env_file_name }}
           (from {{ local_env_path if local_env_stat.stat.exists else 'template' }}).
           Browser tiles: {{ env_overrides.TILER_URL }}.
-          IceNet data: {{
-            'bind-mounted from ' ~ icenet_data_src
-            if (icenet_data_dir.stat.exists and icenet_data_dir.stat.isdir
-                and ((icenet_items | default({'files': []})).files | length) > 0)
-            else 'WARNING: no data/ mounts (' ~ icenet_data_src ~ ' missing or empty)'
-          }}.
+          IceNet data: Mounted via Docker NFS (defined in .env files).

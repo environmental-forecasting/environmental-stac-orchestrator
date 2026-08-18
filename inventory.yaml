@@ -14,4 +14,3 @@ myhosts:
       # deploy_env: staging
       # dest_dir: /opt/environmental-stac-orchestrator
       # local_src: /path/to/environmental-stac-orchestrator
-      # icenet_data_src: /path/to/source/catalog/data

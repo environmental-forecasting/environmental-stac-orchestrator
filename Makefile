@@ -3,11 +3,11 @@
 # Per-environment compose (separate names so they do not clash)
 # --project-name: which running containers belong to this env (e.g. stac-dev-...)
 # Volume name (POSTGRES_VOLUME_NAME in the env file): which database files to use
-# compose.data-symlinks.yaml is generated for resolved ./data mounts (Ansible).
-DATA_LINKS := $(wildcard compose.data-symlinks.yaml)
-COMPOSE_FILES_dev     := -f compose.yaml -f compose.override.yaml $(if $(DATA_LINKS),-f compose.data-symlinks.yaml)
-COMPOSE_FILES_staging := -f compose.yaml -f compose.prod.yaml $(if $(DATA_LINKS),-f compose.data-symlinks.yaml)
-COMPOSE_FILES_prod    := -f compose.yaml -f compose.prod.yaml $(if $(DATA_LINKS),-f compose.data-symlinks.yaml)
+# compose.data-mounts.yaml is generated for resolved remote data mounts (Ansible).
+DATA_LINKS := $(wildcard compose.data-mounts.yaml)
+COMPOSE_FILES_dev     := -f compose.yaml -f compose.override.yaml $(if $(DATA_LINKS),-f compose.data-mounts.yaml)
+COMPOSE_FILES_staging := -f compose.yaml -f compose.prod.yaml $(if $(DATA_LINKS),-f compose.data-mounts.yaml)
+COMPOSE_FILES_prod    := -f compose.yaml -f compose.prod.yaml $(if $(DATA_LINKS),-f compose.data-mounts.yaml)
 COMPOSE_dev     := docker compose --project-name stac-dev $(COMPOSE_FILES_dev) --env-file .env.development
 COMPOSE_staging := docker compose --project-name stac-staging $(COMPOSE_FILES_staging) --env-file .env.staging
 COMPOSE_prod    := docker compose --project-name stac-prod $(COMPOSE_FILES_prod) --env-file .env.production
