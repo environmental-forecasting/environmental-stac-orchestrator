@@ -273,6 +273,8 @@ services:
       # Seconds a cached Collection or init list stays valid.
       # 0 keeps rows until the store evicts them.
       - STAC_DISK_CACHE_TTL=${STAC_DISK_CACHE_TTL:-86400}
+      # Optional CARTO API key for Voyager, Positron, and Dark Matter basemaps.
+      - CARTO_API_KEY=${CARTO_API_KEY:-}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.dashboard.rule=(Host(`${DOMAIN_NAME}`) || Host(`localhost`) || Host(`127.0.0.1`) || Host(`${HOST_IP}`)) && PathPrefix(`/dashboard`)"
