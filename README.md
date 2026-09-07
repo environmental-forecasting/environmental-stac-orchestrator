@@ -62,7 +62,7 @@ meta-repo/
 
 This is the basic workflow, and how the different repositories interact between each other:
 
-![Architecture diagram](docs/images/orchestrator-services-dash-pgstac-leaflet-schematic.png "Architecture Diagram")
+![Architecture diagram](docs/images/forecast-services-dash-pgstac-openlayers-orchestrator-github-repo.png "Architecture Diagram")
 
 ---
 
