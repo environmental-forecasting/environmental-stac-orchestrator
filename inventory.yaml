@@ -9,7 +9,7 @@ myhosts:
     environmental_stac:
       # DNS name or IP of the Rocky 9 (or similar) guest.
       ansible_host: bsl-icenet-dev-s1
-      ansible_user: CHANGE_ME
+      ansible_user: icenet
       # Optional host defaults (override with ansible-playbook -e ...).
       # deploy_env: staging
       # dest_dir: /opt/environmental-stac-orchestrator
